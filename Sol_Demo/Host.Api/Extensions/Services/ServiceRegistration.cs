@@ -1,4 +1,6 @@
-﻿namespace Host.Api.Extensions.Services
+﻿using Utility.Shared.Config;
+
+namespace Host.Api.Extensions.Services
 {
     public static class ServiceRegistration
     {
@@ -62,6 +64,9 @@
 
             // Auto Register Dependency Injection
             builder.Services.AutoRegisterDependencies();
+
+            // Add Custom Reading Configuration File (appSettings.json)
+            builder.Services.AddConfigService();
         }
     }
 }

@@ -13,11 +13,13 @@ namespace Utility.Shared.AES;
 public class AesDecryptAndValidation
 {
     private readonly DtoValidation _dtoValidation = new DtoValidation();
-    private readonly AesHelper _aesHelper = new AesHelper();
+    private readonly AesHelper _aesHelper;
+
+    public AesDecryptAndValidation(string secretKey) => _aesHelper = new AesHelper(secretKey);
 
     public async Task<DataResponse<TRequestDto>> WrapperAsync<TRequestDto, TDtoValidator>(AesRequestDto aesRequestDto)
         where TRequestDto : class
-         where TDtoValidator : IValidator<TRequestDto>, new()
+        where TDtoValidator : IValidator<TRequestDto>, new()
     {
         try
         {

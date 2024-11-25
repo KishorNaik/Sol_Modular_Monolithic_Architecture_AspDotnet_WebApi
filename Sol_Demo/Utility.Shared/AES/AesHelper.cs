@@ -7,7 +7,12 @@ namespace Utility.Shared.AES;
 public class AesHelper
 {
     private readonly int _ivLength = ConstantValue.IvLength;
-    private readonly byte[] _encryptionKey = Encoding.UTF8.GetBytes(ConstantValue.SecretKey!);
+    private readonly byte[] _encryptionKey;
+
+    public AesHelper(string secretKey)
+    {
+        _encryptionKey = Encoding.UTF8.GetBytes(secretKey);
+    }
 
     public async Task<string> EncryptAsync(string data)
     {
