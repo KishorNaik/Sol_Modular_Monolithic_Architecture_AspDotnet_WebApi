@@ -16,7 +16,7 @@ namespace Frameworks.Aspnetcore.Library.MIddleware
 {
     public static class ExceptionMiddlewareExtensions
     {
-        public static void UseCustomeExceptionHandler(this IApplicationBuilder app)
+        public static void UseCustomExceptionHandler(this IApplicationBuilder app)
         {
             _ = app.UseExceptionHandler(appError =>
             {

@@ -1,0 +1,11 @@
+﻿global using Host.Api.Extensions.Services;
+global using Frameworks.Aspnetcore.Library.Extensions;
+global using Models.Shared.Constant;
+global using AutoDependencyRegistration;
+global using Microsoft.AspNetCore.HttpLogging;
+global using Microsoft.AspNetCore.Mvc;
+global using Microsoft.AspNetCore.Mvc.Infrastructure;
+global using Host.Api.Extensions.Modules;
+global using Scalar.AspNetCore;
+global using Frameworks.Aspnetcore.Library.MIddleware;
+global using Host.Api.Extensions.Middlewares;
