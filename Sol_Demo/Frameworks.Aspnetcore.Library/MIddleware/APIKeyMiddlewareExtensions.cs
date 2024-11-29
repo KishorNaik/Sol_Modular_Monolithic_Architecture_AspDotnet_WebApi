@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using Models.Shared.Responses;
 using Utility.Shared.Traces;
 
@@ -50,6 +51,8 @@ public static class ApiKeyMiddlewareExtension
 {
     public static IApplicationBuilder UseApiKeyMiddleware(this IApplicationBuilder builder, IConfiguration configuration)
     {
-        return builder.UseMiddleware<ApiKeyMiddleware>(configuration);
+        var traceIdService = builder.ApplicationServices.GetRequiredService<ITraceIdService>();
+
+        return builder.UseMiddleware<ApiKeyMiddleware>(configuration, traceIdService);
     }
 }

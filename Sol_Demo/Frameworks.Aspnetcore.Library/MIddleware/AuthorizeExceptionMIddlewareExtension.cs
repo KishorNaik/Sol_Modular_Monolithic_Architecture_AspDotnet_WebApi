@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.DependencyInjection;
 using Models.Shared.Responses;
 using System.Text.Json;
 using Utility.Shared.Traces;
@@ -51,6 +52,8 @@ public static class AuthorizeExceptionMiddlewareExtension
 {
     public static IApplicationBuilder UseAuthorizeExceptionMiddleware(this IApplicationBuilder builder)
     {
-        return builder.UseMiddleware<AuthorizeExceptionMiddleware>();
+        var traceIdService = builder.ApplicationServices.GetRequiredService<ITraceIdService>();
+
+        return builder.UseMiddleware<AuthorizeExceptionMiddleware>(traceIdService);
     }
 }

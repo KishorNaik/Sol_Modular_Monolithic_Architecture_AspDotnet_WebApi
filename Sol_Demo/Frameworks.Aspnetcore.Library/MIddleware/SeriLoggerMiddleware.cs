@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Serilog;
 using Utility.Shared.Traces;
@@ -77,7 +78,9 @@ public static class SerilogMiddlewareExtension
 {
     public static void UseSeriLogs(this WebApplication app)
     {
+        var traceIdService = app.Services.GetRequiredService<ITraceIdService>();
+
         app.UseSerilogRequestLogging();
-        app.UseMiddleware<RequestResponseLoggingMiddleware>();
+        app.UseMiddleware<RequestResponseLoggingMiddleware>(traceIdService);
     }
 }
