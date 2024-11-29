@@ -2,16 +2,19 @@
 using Microsoft.AspNetCore.Http;
 using Models.Shared.Responses;
 using System.Text.Json;
+using Utility.Shared.Traces;
 
 namespace Frameworks.Aspnetcore.Library.MIddleware;
 
 public class AuthorizeExceptionMiddleware
 {
     private readonly RequestDelegate _next;
+    private readonly ITraceIdService _traceIdService;
 
-    public AuthorizeExceptionMiddleware(RequestDelegate next)
+    public AuthorizeExceptionMiddleware(RequestDelegate next, ITraceIdService traceIdService)
     {
         _next = next;
+        _traceIdService = traceIdService;
     }
 
     public async Task InvokeAsync(HttpContext httpContext)
@@ -28,7 +31,7 @@ public class AuthorizeExceptionMiddleware
         }
     }
 
-    private static async Task HandleExceptionAsync(HttpContext context, string message)
+    private async Task HandleExceptionAsync(HttpContext context, string message)
     {
         context.Response.ContentType = "application/json";
 
@@ -37,7 +40,9 @@ public class AuthorizeExceptionMiddleware
             PropertyNamingPolicy = null
         };
 
-        var errorHandler = new ErrorHandlerModel(false, context.Response.StatusCode, message);
+        string traceId = await _traceIdService.GetOrGenerateTraceId(context);
+
+        var errorHandler = new ErrorHandlerModel(false, context.Response.StatusCode, message, traceId);
         await context.Response.WriteAsJsonAsync(errorHandler, options);
     }
 }

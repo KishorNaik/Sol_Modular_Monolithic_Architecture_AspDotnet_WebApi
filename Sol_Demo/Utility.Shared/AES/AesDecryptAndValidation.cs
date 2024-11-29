@@ -17,17 +17,17 @@ public class AesDecryptAndValidation
 
     public AesDecryptAndValidation(string secretKey) => _aesHelper = new AesHelper(secretKey);
 
-    public async Task<DataResponse<TRequestDto>> WrapperAsync<TRequestDto, TDtoValidator>(AesRequestDto aesRequestDto)
+    public async Task<Result<TRequestDto>> WrapperAsync<TRequestDto, TDtoValidator>(AesRequestDto aesRequestDto)
         where TRequestDto : class
         where TDtoValidator : IValidator<TRequestDto>, new()
     {
         try
         {
             if (aesRequestDto is null)
-                return ResponeException.Error<TRequestDto>("AesRequestDto is null", (int)HttpStatusCode.BadRequest);
+                return ResultExceptionFactory.Error<TRequestDto>("AesRequestDto is null", HttpStatusCode.BadRequest);
 
             if (aesRequestDto.Body is null)
-                return ResponeException.Error<TRequestDto>("Body is null", (int)HttpStatusCode.BadRequest);
+                return ResultExceptionFactory.Error<TRequestDto>("Body is null", HttpStatusCode.BadRequest);
 
             // Decrypt
             String requestBody = aesRequestDto.Body;
@@ -38,13 +38,13 @@ public class AesDecryptAndValidation
             Result result = await _dtoValidation.ValidateAsync<TRequestDto, TDtoValidator>(requestDto);
 
             if (result.IsFailed)
-                return ResponeException.Error<TRequestDto>(result.Errors[0].Message, (int)HttpStatusCode.BadRequest);
+                return ResultExceptionFactory.Error<TRequestDto>(result.Errors[0]);
 
-            return DataResponse.Success<TRequestDto>((int)HttpStatusCode.OK, requestDto, String.Empty);
+            return Result.Ok(requestDto);
         }
         catch (Exception ex)
         {
-            return ResponeException.Error<TRequestDto>(ex.Message, (int)HttpStatusCode.BadRequest);
+            return ResultExceptionFactory.Error<TRequestDto>(ex.Message, HttpStatusCode.InternalServerError);
         }
     }
 }

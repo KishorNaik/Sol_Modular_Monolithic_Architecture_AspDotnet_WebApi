@@ -9,4 +9,6 @@ public class DataResponse<TData>
     public TData? Data { get; set; }
 
     public string? Message { get; set; }
+
+    public string? TraceId { get; set; }
 }

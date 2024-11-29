@@ -1,4 +1,5 @@
 ﻿using Utility.Shared.Config;
+using Utility.Shared.Response;
 
 namespace Host.Api.Extensions.Services
 {
@@ -11,6 +12,7 @@ namespace Host.Api.Extensions.Services
 
             builder.Services.AddHttpContextAccessor();
             builder.Services.AddSingleton<IActionContextAccessor, ActionContextAccessor>();
+            builder.Services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
 
             // [FromRoute][FromQuery][FromBody] in one Model.
             builder.Services.Configure<ApiBehaviorOptions>((options) => options.SuppressInferBindingSourcesForParameters = true);
@@ -67,6 +69,9 @@ namespace Host.Api.Extensions.Services
 
             // Add Custom Reading Configuration File (appSettings.json)
             builder.Services.AddConfigService();
+
+            // Add Data Response Builder
+            builder.Services.AddDataResponse();
         }
     }
 }

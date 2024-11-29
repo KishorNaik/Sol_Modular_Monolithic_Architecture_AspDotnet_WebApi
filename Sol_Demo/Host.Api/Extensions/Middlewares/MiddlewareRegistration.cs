@@ -1,6 +1,7 @@
 ﻿using Hangfire;
 using HealthChecks.UI.Client;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
+using Serilog;
 
 namespace Host.Api.Extensions.Middlewares;
 
@@ -60,6 +61,8 @@ public static class MiddlewareRegistration
         // Use Hangfire
         app.UseHangfireDashboard();
         app.MapHangfireDashboard("/hangfire");
+
+        app.UseSerilogRequestLogging();
 
         app.MapControllers();
     }

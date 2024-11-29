@@ -24,7 +24,7 @@ public class ConfigHelper : IConfigHelper
     public Result<string> GetValue(string key)
     {
         if (key is null)
-            return ResultException.Error<string>("key cannot be null", System.Net.HttpStatusCode.BadRequest);
+            return ResultExceptionFactory.Error<string>("key cannot be null", System.Net.HttpStatusCode.BadRequest);
 
         string value = _configuration[key]!;
 
@@ -34,11 +34,11 @@ public class ConfigHelper : IConfigHelper
     public Result<T> GetSection<T>(string sectionName) where T : new()
     {
         if (string.IsNullOrEmpty(sectionName))
-            return ResultException.Error<T>("sectionName cannot be null or empty", System.Net.HttpStatusCode.BadRequest);
+            return ResultExceptionFactory.Error<T>("sectionName cannot be null or empty", System.Net.HttpStatusCode.BadRequest);
 
         var section = _configuration.GetSection(sectionName);
         if (!section.Exists())
-            return ResultException.Error<T>($"Section '{sectionName}' does not exist", System.Net.HttpStatusCode.NotFound);
+            return ResultExceptionFactory.Error<T>($"Section '{sectionName}' does not exist", System.Net.HttpStatusCode.NotFound);
 
         T configObject = new T();
         section.Bind(configObject);
