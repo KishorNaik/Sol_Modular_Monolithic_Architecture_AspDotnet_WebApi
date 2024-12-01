@@ -1,5 +1,6 @@
 ﻿using Hangfire;
 using HealthChecks.UI.Client;
+using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Serilog;
 
@@ -15,6 +16,9 @@ public static class MiddlewareRegistration
         // Configure the HTTP request pipeline.
         if (app.Environment.IsDevelopment())
         {
+            app.UseSwagger();
+            app.UseSwaggerUI();
+
             app.MapOpenApi();
             app.MapScalarApiReference();
         }
@@ -38,7 +42,7 @@ public static class MiddlewareRegistration
         });
 
         // Use API Key
-        app.UseApiKeyMiddleware(builder.Configuration);
+        //app.UseApiKeyMiddleware(builder.Configuration);
 
         // Use Security Middleware
         app.UseSecurityHeadersMiddleware();

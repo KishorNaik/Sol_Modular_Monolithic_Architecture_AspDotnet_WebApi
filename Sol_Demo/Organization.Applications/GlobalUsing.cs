@@ -7,3 +7,4 @@ global using Microsoft.AspNetCore.Authorization;
 global using Microsoft.AspNetCore.RateLimiting;
 global using Models.Shared.Responses;
 global using System.Net;
+global using sorovi.DependencyInjection.AutoRegister;

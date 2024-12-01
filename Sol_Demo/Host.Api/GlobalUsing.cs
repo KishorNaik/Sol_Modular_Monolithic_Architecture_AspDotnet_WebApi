@@ -1,7 +1,6 @@
 ﻿global using Host.Api.Extensions.Services;
 global using Frameworks.Aspnetcore.Library.Extensions;
 global using Models.Shared.Constant;
-global using AutoDependencyRegistration;
 global using Microsoft.AspNetCore.HttpLogging;
 global using Microsoft.AspNetCore.Mvc;
 global using Microsoft.AspNetCore.Mvc.Infrastructure;

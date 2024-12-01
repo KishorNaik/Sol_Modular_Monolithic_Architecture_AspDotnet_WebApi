@@ -1,5 +1,7 @@
-﻿using Utility.Shared.Config;
+﻿using sorovi.DependencyInjection.AutoRegister;
+using Utility.Shared.Config;
 using Utility.Shared.Response;
+using Utility.Shared.Traces;
 
 namespace Host.Api.Extensions.Services
 {
@@ -13,6 +15,15 @@ namespace Host.Api.Extensions.Services
             builder.Services.AddHttpContextAccessor();
             builder.Services.AddSingleton<IActionContextAccessor, ActionContextAccessor>();
             builder.Services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
+
+            builder.Services.AddEndpointsApiExplorer();
+            builder.Services.AddSwaggerGen(options =>
+            {
+                options.AddJwtInSwagger();
+            });
+
+            // Add Trace Id
+            builder.Services.AddTraceIdService();
 
             // [FromRoute][FromQuery][FromBody] in one Model.
             builder.Services.Configure<ApiBehaviorOptions>((options) => options.SuppressInferBindingSourcesForParameters = true);
@@ -65,7 +76,7 @@ namespace Host.Api.Extensions.Services
             builder.Services.AddJwtToken(jwtAppSetting);
 
             // Auto Register Dependency Injection
-            builder.Services.AutoRegisterDependencies();
+            //builder.Services.RegisterServices();
 
             // Add Custom Reading Configuration File (appSettings.json)
             builder.Services.AddConfigService();

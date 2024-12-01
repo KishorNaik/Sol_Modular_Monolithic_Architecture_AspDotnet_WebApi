@@ -12,12 +12,10 @@
 
     <ItemGroup>
       <ProjectReference Include="..\Framework.Packages\Framework.Packages.csproj" />
+      <ProjectReference Include="..\Frameworks.Aspnetcore.Library\Frameworks.Aspnetcore.Library.csproj" />
       <ProjectReference Include="..\Messaging.Contracts.Shared\Messaging.Contracts.Shared.csproj" />
       <ProjectReference Include="..\Models.Shared\Models.Shared.csproj" />
-    </ItemGroup>
-
-    <ItemGroup>
-      <Folder Include="Infrastructures\" />
+      <ProjectReference Include="..\Organization.Infrastructures\Organization.Infrastructures.csproj" />
     </ItemGroup>
 
 </Project>

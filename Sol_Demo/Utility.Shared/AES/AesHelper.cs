@@ -11,7 +11,14 @@ public class AesHelper
 
     public AesHelper(string secretKey)
     {
-        _encryptionKey = Encoding.UTF8.GetBytes(secretKey);
+        //_encryptionKey = Encoding.UTF8.GetBytes(secretKey);
+
+        // Ensure the key is 256 bits (32 bytes) long
+        _encryptionKey = new byte[32];
+        byte[] tempKey = Encoding.UTF8.GetBytes(secretKey);
+
+        // Copy the secret key into the encryption key, truncating or padding as necessary
+        Array.Copy(tempKey, _encryptionKey, Math.Min(tempKey.Length, _encryptionKey.Length));
     }
 
     public async Task<string> EncryptAsync(string data)

@@ -7,7 +7,9 @@ namespace Utility.Shared.Response;
 
 public interface IDataResponseFactory
 {
-    Task<DataResponse<TData>> Success<TData>(int? statusCode, TData? data, string? message = default);
+    Task<DataResponse<TData>> SuccessAsync<TData>(int? statusCode, TData? data, string? message = default);
+
+    Task<DataResponse<T>> ErrorAsync<T>(string message, int statusCode, T data = default);
 }
 
 public class DataResponseFactory : IDataResponseFactory
@@ -21,13 +23,13 @@ public class DataResponseFactory : IDataResponseFactory
         _httpContextAccessor = httpContextAccessor;
     }
 
-    public async Task<DataResponse<TData>> Success<TData>(int? statusCode, TData? data, string? message = default)
+    public async Task<DataResponse<TData>> SuccessAsync<TData>(int? statusCode, TData? data, string? message = default)
     {
         var traceId = await _traceIdService.GetOrGenerateTraceId(_httpContextAccessor.HttpContext!); //traceId
         return new DataResponse<TData> { Success = true, StatusCode = statusCode, Data = data, Message = message, TraceId = traceId };
     }
 
-    public async Task<DataResponse<T>> Error<T>(string message, int statusCode, T data = default)
+    public async Task<DataResponse<T>> ErrorAsync<T>(string message, int statusCode, T data = default)
     {
         var traceId = await _traceIdService.GetOrGenerateTraceId(_httpContextAccessor.HttpContext!); //traceId
         return new DataResponse<T> { Success = false, StatusCode = statusCode, Data = data, Message = message, TraceId = traceId };

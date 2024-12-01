@@ -4,7 +4,7 @@ public static class ConstantValue
 {
     public const double CacheTime = 365 * 7000;
 
-    public const string DbName = "CarbonCredit";
+    public const string DbName = "MMA";
 
     public const string SqlCacheDbName = "SQLCache";
 
@@ -16,5 +16,5 @@ public static class ConstantValue
 
     public const int IvLength = 16;
 
-    public static string? SecretKey = Environment.GetEnvironmentVariable("SecretKey");
+    public static string? AesSecretKey = "AesSecretKey";
 }
