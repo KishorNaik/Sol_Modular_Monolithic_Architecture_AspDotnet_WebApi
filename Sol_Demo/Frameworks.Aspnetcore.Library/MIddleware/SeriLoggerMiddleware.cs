@@ -36,6 +36,8 @@ public class RequestResponseLoggingMiddleware
     {
         // Clone the request body
         context.Request.EnableBuffering();
+
+        context.Request.Body.Position = 0;
         var requestBody = await new StreamReader(context.Request.Body).ReadToEndAsync();
         context.Request.Body.Position = 0;
 

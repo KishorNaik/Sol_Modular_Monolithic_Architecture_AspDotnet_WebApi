@@ -1,0 +1,65 @@
+﻿using FluentResults;
+using Microsoft.EntityFrameworkCore;
+using Organization.Infrastructures.Context;
+using sorovi.DependencyInjection.AutoRegister;
+using System.Text;
+using Utility.Shared.Exceptions;
+using Utility.Shared.ServiceHandler;
+
+namespace Organization.Infrastructures.Services.GetVersionByIdentifier;
+
+public class GetOrganizationVersionByIdentiferSqlParameter
+{
+    public Guid? Identifier { get; }
+
+    public CancellationToken CancellationToken { get; }
+
+    public GetOrganizationVersionByIdentiferSqlParameter(Guid? identifier, CancellationToken cancellationToken)
+    {
+        Identifier = identifier;
+        CancellationToken = cancellationToken;
+    }
+}
+
+public interface IGetOrganizationVersionByIdentiferDbService : IServiceHandlerAsync<GetOrganizationVersionByIdentiferSqlParameter, string>
+{
+}
+
+[ScopedService(typeof(IGetOrganizationVersionByIdentiferDbService))]
+public class GetOrganizationVersionByIdentiferDbService : IGetOrganizationVersionByIdentiferDbService
+{
+    private readonly OrganizationDbContext _organizationDbContext;
+
+    public GetOrganizationVersionByIdentiferDbService(OrganizationDbContext organizationDbContext)
+    {
+        _organizationDbContext = organizationDbContext;
+    }
+
+    async Task<Result<string>> IServiceHandlerAsync<GetOrganizationVersionByIdentiferSqlParameter, string>.HandleAsync(GetOrganizationVersionByIdentiferSqlParameter @params)
+    {
+        try
+        {
+            if (@params is null)
+                return ResultExceptionFactory.Error<string>($"{nameof(GetOrganizationVersionByIdentiferSqlParameter)}", System.Net.HttpStatusCode.BadRequest);
+
+            if (@params.Identifier is null)
+                return ResultExceptionFactory.Error<string>($"{nameof(@params.Identifier)}", System.Net.HttpStatusCode.BadRequest);
+
+            var versionResult = (await _organizationDbContext
+                .Torganizations
+                .AsNoTracking()
+                .FirstOrDefaultAsync(x => x.Identifier == @params.Identifier, @params.CancellationToken))?.Version;
+
+            if (versionResult is null)
+                return ResultExceptionFactory.Error<string>($"{nameof(@params.Identifier)}", System.Net.HttpStatusCode.NotFound);
+
+            string versionStr = Encoding.UTF8.GetString(versionResult);
+
+            return Result.Ok(versionStr);
+        }
+        catch (Exception ex)
+        {
+            return ResultExceptionFactory.Error<string>(ex.Message, System.Net.HttpStatusCode.InternalServerError);
+        }
+    }
+}
