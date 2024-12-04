@@ -21,7 +21,7 @@ public class AddOrganisationUnitTests
     private readonly Mock<IAddOrganizationRequestEntityMapService> _mockRequestEntityMapService;
     private readonly Mock<IAddOrganizationDbService> _mockDbService;
     private readonly Mock<IAddOrganizationResponseService> _mockResponseService;
-    private readonly IRequestHandler<AddOrganizationCommand, DataResponse<AddOrganizationResponseDto>> _handler;
+    private readonly IRequestHandler<AddOrganizationCommand, DataResponse<AesResponseDto>> _handler;
 
     public AddOrganisationUnitTests()
     {
@@ -49,8 +49,8 @@ public class AddOrganisationUnitTests
         AddOrganizationCommand command = null;
 
         _mockDataResponseFactory
-           .Setup(factory => factory.ErrorAsync<AddOrganizationResponseDto>($"{nameof(AddOrganizationCommand)} object is null", Convert.ToInt32(HttpStatusCode.BadRequest), null!))
-           .ReturnsAsync(new DataResponse<AddOrganizationResponseDto> { Success = false, StatusCode = (int)HttpStatusCode.BadRequest });
+           .Setup(factory => factory.ErrorAsync<AesResponseDto>($"{nameof(AddOrganizationCommand)} object is null", Convert.ToInt32(HttpStatusCode.BadRequest), null!))
+           .ReturnsAsync(new DataResponse<AesResponseDto> { Success = false, StatusCode = (int)HttpStatusCode.BadRequest });
 
         // Act
         var result = await _handler.Handle(command, CancellationToken.None);
@@ -67,8 +67,8 @@ public class AddOrganisationUnitTests
         var command = new AddOrganizationCommand(null!);
 
         _mockDataResponseFactory
-           .Setup(factory => factory.ErrorAsync<AddOrganizationResponseDto>("Request object is null", Convert.ToInt32(HttpStatusCode.BadRequest), null!))
-           .ReturnsAsync(new DataResponse<AddOrganizationResponseDto> { Success = false, StatusCode = (int)HttpStatusCode.BadRequest });
+           .Setup(factory => factory.ErrorAsync<AesResponseDto>("Request object is null", Convert.ToInt32(HttpStatusCode.BadRequest), null!))
+           .ReturnsAsync(new DataResponse<AesResponseDto> { Success = false, StatusCode = (int)HttpStatusCode.BadRequest });
 
         // Act
         var result = await _handler.Handle(command, CancellationToken.None);
@@ -90,8 +90,8 @@ public class AddOrganisationUnitTests
             .ReturnsAsync(ResultExceptionFactory.Error<AddOrganizationRequestDto>("Failed", HttpStatusCode.BadRequest));
 
         _mockDataResponseFactory
-          .Setup(factory => factory.ErrorAsync<AddOrganizationResponseDto>("Failed", Convert.ToInt32(HttpStatusCode.BadRequest), null!))
-          .ReturnsAsync(new DataResponse<AddOrganizationResponseDto> { Success = false, StatusCode = (int)HttpStatusCode.BadRequest });
+          .Setup(factory => factory.ErrorAsync<AesResponseDto>("Failed", Convert.ToInt32(HttpStatusCode.BadRequest), null!))
+          .ReturnsAsync(new DataResponse<AesResponseDto> { Success = false, StatusCode = (int)HttpStatusCode.BadRequest });
 
         // Act
         var result = await _handler.Handle(command, CancellationToken.None);
@@ -119,8 +119,8 @@ public class AddOrganisationUnitTests
             .ReturnsAsync(ResultExceptionFactory.Error("Failed", HttpStatusCode.BadRequest));
 
         _mockDataResponseFactory
-          .Setup(factory => factory.ErrorAsync<AddOrganizationResponseDto>("Failed", Convert.ToInt32(HttpStatusCode.BadRequest), null!))
-          .ReturnsAsync(new DataResponse<AddOrganizationResponseDto> { Success = false, StatusCode = (int)HttpStatusCode.BadRequest });
+          .Setup(factory => factory.ErrorAsync<AesResponseDto>("Failed", Convert.ToInt32(HttpStatusCode.BadRequest), null!))
+          .ReturnsAsync(new DataResponse<AesResponseDto> { Success = false, StatusCode = (int)HttpStatusCode.BadRequest });
 
         // Act
         var result = await _handler.Handle(command, CancellationToken.None);
@@ -152,8 +152,8 @@ public class AddOrganisationUnitTests
             .ReturnsAsync(ResultExceptionFactory.Error<Torganization>("Failed", HttpStatusCode.BadRequest));
 
         _mockDataResponseFactory
-          .Setup(factory => factory.ErrorAsync<AddOrganizationResponseDto>("Failed", Convert.ToInt32(HttpStatusCode.BadRequest), null!))
-          .ReturnsAsync(new DataResponse<AddOrganizationResponseDto> { Success = false, StatusCode = (int)HttpStatusCode.BadRequest });
+          .Setup(factory => factory.ErrorAsync<AesResponseDto>("Failed", Convert.ToInt32(HttpStatusCode.BadRequest), null!))
+          .ReturnsAsync(new DataResponse<AesResponseDto> { Success = false, StatusCode = (int)HttpStatusCode.BadRequest });
 
         // Act
         var result = await _handler.Handle(command, CancellationToken.None);
@@ -190,8 +190,8 @@ public class AddOrganisationUnitTests
             .ReturnsAsync(ResultExceptionFactory.Error<Torganization>("Failed", HttpStatusCode.BadRequest));
 
         _mockDataResponseFactory
-          .Setup(factory => factory.ErrorAsync<AddOrganizationResponseDto>("Failed", Convert.ToInt32(HttpStatusCode.BadRequest), null!))
-          .ReturnsAsync(new DataResponse<AddOrganizationResponseDto> { Success = false, StatusCode = (int)HttpStatusCode.BadRequest });
+          .Setup(factory => factory.ErrorAsync<AesResponseDto>("Failed", Convert.ToInt32(HttpStatusCode.BadRequest), null!))
+          .ReturnsAsync(new DataResponse<AesResponseDto> { Success = false, StatusCode = (int)HttpStatusCode.BadRequest });
 
         // Act
         var result = await _handler.Handle(command, CancellationToken.None);
@@ -229,11 +229,11 @@ public class AddOrganisationUnitTests
 
         _mockResponseService
             .Setup((service) => service.HandleAsync(torganization))
-            .ReturnsAsync(ResultExceptionFactory.Error<AddOrganizationResponseDto>("Failed", HttpStatusCode.BadRequest));
+            .ReturnsAsync(ResultExceptionFactory.Error<AesResponseDto>("Failed", HttpStatusCode.BadRequest));
 
         _mockDataResponseFactory
-          .Setup(factory => factory.ErrorAsync<AddOrganizationResponseDto>("Failed", Convert.ToInt32(HttpStatusCode.BadRequest), null!))
-          .ReturnsAsync(new DataResponse<AddOrganizationResponseDto> { Success = false, StatusCode = (int)HttpStatusCode.BadRequest });
+          .Setup(factory => factory.ErrorAsync<AesResponseDto>("Failed", Convert.ToInt32(HttpStatusCode.BadRequest), null!))
+          .ReturnsAsync(new DataResponse<AesResponseDto> { Success = false, StatusCode = (int)HttpStatusCode.BadRequest });
 
         // Act
         var result = await _handler.Handle(command, CancellationToken.None);
@@ -252,7 +252,7 @@ public class AddOrganisationUnitTests
 
         var addOrganizationRequestDto = new AddOrganizationRequestDto();
         var torganization = new Torganization();
-        var addOrganizationResponseDto = new AddOrganizationResponseDto();
+        var aesResponseDTO = new AesResponseDto();
 
         _mockDecrypteService
             .Setup((service) => service.HandleAsync(It.IsAny<AddOrganizationDecrypteAndValidateParameters>()))
@@ -272,11 +272,11 @@ public class AddOrganisationUnitTests
 
         _mockResponseService
             .Setup((service) => service.HandleAsync(torganization))
-            .ReturnsAsync(Result.Ok(addOrganizationResponseDto));
+            .ReturnsAsync(Result.Ok(aesResponseDTO));
 
         _mockDataResponseFactory
-          .Setup(factory => factory.SuccessAsync<AddOrganizationResponseDto>((int)HttpStatusCode.Created, addOrganizationResponseDto, "Organization added successfully"))
-          .ReturnsAsync(new DataResponse<AddOrganizationResponseDto> { Success = true, StatusCode = (int)HttpStatusCode.Created });
+          .Setup(factory => factory.SuccessAsync<AesResponseDto>((int)HttpStatusCode.Created, aesResponseDTO, "Organization added successfully"))
+          .ReturnsAsync(new DataResponse<AesResponseDto> { Success = true, StatusCode = (int)HttpStatusCode.Created });
 
         // Act
         var result = await _handler.Handle(command, CancellationToken.None);

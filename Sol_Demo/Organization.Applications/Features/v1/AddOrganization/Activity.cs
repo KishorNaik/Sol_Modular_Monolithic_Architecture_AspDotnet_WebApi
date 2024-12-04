@@ -2,6 +2,7 @@
 using FluentValidation;
 using Models.Shared.Constant;
 using Models.Shared.Requests;
+using Newtonsoft.Json;
 using Organization.Contracts.Features.AddOrganizations;
 using Organization.Infrastructures.Entities;
 using Organization.Infrastructures.Services.AddOrganization;
@@ -198,30 +199,50 @@ public class AddOrganizationRequestEntityMapService : IAddOrganizationRequestEnt
 
 #region Add Organization Response Service
 
-public interface IAddOrganizationResponseService : IServiceHandlerAsync<Torganization, AddOrganizationResponseDto>
+public interface IAddOrganizationResponseService : IServiceHandlerAsync<Torganization, AesResponseDto>
 {
 }
 
 [ScopedService(typeof(IAddOrganizationResponseService))]
 public class AddOrganizationResponseService : IAddOrganizationResponseService
 {
-    async Task<Result<AddOrganizationResponseDto>> IServiceHandlerAsync<Torganization, AddOrganizationResponseDto>.HandleAsync(Torganization @params)
+    private readonly IConfigHelper _configHelper;
+
+    public AddOrganizationResponseService(IConfigHelper configHelper)
+    {
+        _configHelper = configHelper;
+    }
+
+    async Task<Result<AesResponseDto>> IServiceHandlerAsync<Torganization, AesResponseDto>.HandleAsync(Torganization @params)
     {
         try
         {
             if (@params is null)
-                return ResultExceptionFactory.Error<AddOrganizationResponseDto>($"{nameof(Torganization)} object is null", HttpStatusCode.BadRequest);
+                return ResultExceptionFactory.Error<AesResponseDto>($"{nameof(Torganization)} object is null", HttpStatusCode.BadRequest);
+
+            // Get Aes Secret Value from Config Manager
+            var aesSecret = _configHelper.GetValue(ConstantValue.AesSecretKey!);
+            if (aesSecret.IsFailed)
+                return ResultExceptionFactory.Error<AesResponseDto>("Aes Secret Key not found", HttpStatusCode.NotFound);
 
             AddOrganizationResponseDto addOrganizationResponseDto = new AddOrganizationResponseDto
             {
                 Identifier = @params.Identifier,
             };
 
-            return Result.Ok(addOrganizationResponseDto);
+            // Encrypt Response
+            AesEncryptWrapper<AddOrganizationResponseDto> aesEncrypteWrapper =
+                new AesEncryptWrapper<AddOrganizationResponseDto>();
+
+            var aesEncryptionResult = await aesEncrypteWrapper.HandleAsync(new AesEncrypteWrapperParameter<AddOrganizationResponseDto>(aesSecret.Value, addOrganizationResponseDto));
+            if (aesEncryptionResult.IsFailed)
+                return ResultExceptionFactory.Error<AesResponseDto>(aesEncryptionResult.Errors[0]);
+
+            return Result.Ok(aesEncryptionResult.Value!);
         }
         catch (Exception ex)
         {
-            return ResultExceptionFactory.Error<AddOrganizationResponseDto>(ex.Message, HttpStatusCode.InternalServerError);
+            return ResultExceptionFactory.Error<AesResponseDto>(ex.Message, HttpStatusCode.InternalServerError);
         }
     }
 }
@@ -230,7 +251,7 @@ public class AddOrganizationResponseService : IAddOrganizationResponseService
 
 #region Command Handler
 
-public class AddOrganizationCommand : IRequest<DataResponse<AddOrganizationResponseDto>>
+public class AddOrganizationCommand : IRequest<DataResponse<AesResponseDto>>
 {
     public AesRequestDto? Request { get; set; }
 
@@ -240,7 +261,7 @@ public class AddOrganizationCommand : IRequest<DataResponse<AddOrganizationRespo
     }
 }
 
-public class AddOrganizationCommandHandler : IRequestHandler<AddOrganizationCommand, DataResponse<AddOrganizationResponseDto>>
+public class AddOrganizationCommandHandler : IRequestHandler<AddOrganizationCommand, DataResponse<AesResponseDto>>
 {
     private readonly IDataResponseFactory _dataResponseFactory;
     private readonly IAddOrganizationDecrypteService _addOrganizationDecrypteService;
@@ -266,53 +287,53 @@ public class AddOrganizationCommandHandler : IRequestHandler<AddOrganizationComm
         _addOrganizationResponseService = addOrganizationResponseService;
     }
 
-    async Task<DataResponse<AddOrganizationResponseDto>> IRequestHandler<AddOrganizationCommand, DataResponse<AddOrganizationResponseDto>>.Handle(AddOrganizationCommand request, CancellationToken cancellationToken)
+    async Task<DataResponse<AesResponseDto>> IRequestHandler<AddOrganizationCommand, DataResponse<AesResponseDto>>.Handle(AddOrganizationCommand request, CancellationToken cancellationToken)
     {
         try
         {
             if (request is null)
-                return await _dataResponseFactory.ErrorAsync<AddOrganizationResponseDto>($"{nameof(AddOrganizationCommand)} object is null", (int)HttpStatusCode.BadRequest);
+                return await _dataResponseFactory.ErrorAsync<AesResponseDto>($"{nameof(AddOrganizationCommand)} object is null", (int)HttpStatusCode.BadRequest);
 
             AesRequestDto aesRequestDto = request.Request!;
             if (aesRequestDto is null)
-                return await _dataResponseFactory.ErrorAsync<AddOrganizationResponseDto>("Request object is null", (int)HttpStatusCode.BadRequest);
+                return await _dataResponseFactory.ErrorAsync<AesResponseDto>("Request object is null", (int)HttpStatusCode.BadRequest);
 
             // Decrypt
             var aesDecryptionResult = await _addOrganizationDecrypteService.HandleAsync(new AddOrganizationDecrypteAndValidateParameters(aesRequestDto));
             if (aesDecryptionResult.IsFailed)
-                return await _dataResponseFactory.ErrorAsync<AddOrganizationResponseDto>(aesDecryptionResult.Errors[0].Message, (int)HttpStatusCode.BadRequest);
+                return await _dataResponseFactory.ErrorAsync<AesResponseDto>(aesDecryptionResult.Errors[0].Message, (int)HttpStatusCode.BadRequest);
 
             AddOrganizationRequestDto addOrganizationRequestDto = aesDecryptionResult.Value!;
 
             // Validation
             var validationResult = await _addOrgnizationValidationService.HandleAsync(addOrganizationRequestDto);
             if (validationResult.IsFailed)
-                return await _dataResponseFactory.ErrorAsync<AddOrganizationResponseDto>(validationResult.Errors[0].Message, (int)HttpStatusCode.BadRequest);
+                return await _dataResponseFactory.ErrorAsync<AesResponseDto>(validationResult.Errors[0].Message, (int)HttpStatusCode.BadRequest);
 
             // Map AddOraganizationRequestDTO to TOrganization Entity
             var organizationResult = await _addOrganizationRequestEntityMapService.HandleAsync(addOrganizationRequestDto);
             if (organizationResult.IsFailed)
-                return await _dataResponseFactory.ErrorAsync<AddOrganizationResponseDto>(organizationResult.Errors[0].Message, (int)HttpStatusCode.BadRequest);
+                return await _dataResponseFactory.ErrorAsync<AesResponseDto>(organizationResult.Errors[0].Message, (int)HttpStatusCode.BadRequest);
 
             Torganization torganization = organizationResult.Value!;
 
             // Add Organization
             var addOrganizationResult = await _addOrganizationDbService.HandleAsync(new AddOrganizationSqlParameters(torganization, cancellationToken));
             if (addOrganizationResult.IsFailed)
-                return await _dataResponseFactory.ErrorAsync<AddOrganizationResponseDto>(addOrganizationResult.Errors[0].Message, (int)HttpStatusCode.BadRequest);
+                return await _dataResponseFactory.ErrorAsync<AesResponseDto>(addOrganizationResult.Errors[0].Message, (int)HttpStatusCode.BadRequest);
 
             torganization = addOrganizationResult.Value!;
 
             // Response
             var responseResult = await _addOrganizationResponseService.HandleAsync(torganization);
             if (responseResult.IsFailed)
-                return await _dataResponseFactory.ErrorAsync<AddOrganizationResponseDto>(responseResult.Errors[0].Message, (int)HttpStatusCode.BadRequest);
+                return await _dataResponseFactory.ErrorAsync<AesResponseDto>(responseResult.Errors[0].Message, (int)HttpStatusCode.BadRequest);
 
-            return await _dataResponseFactory.SuccessAsync<AddOrganizationResponseDto>((int)HttpStatusCode.Created, responseResult.Value, "Organization added successfully");
+            return await _dataResponseFactory.SuccessAsync<AesResponseDto>((int)HttpStatusCode.Created, responseResult.Value, "Organization added successfully");
         }
         catch (Exception ex)
         {
-            return await _dataResponseFactory.ErrorAsync<AddOrganizationResponseDto>(ex.Message, (int)HttpStatusCode.InternalServerError);
+            return await _dataResponseFactory.ErrorAsync<AesResponseDto>(ex.Message, (int)HttpStatusCode.InternalServerError);
         }
     }
 }
