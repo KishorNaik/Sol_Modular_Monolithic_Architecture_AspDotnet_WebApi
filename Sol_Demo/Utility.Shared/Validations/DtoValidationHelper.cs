@@ -3,11 +3,11 @@ using FluentValidation;
 
 namespace Utility.Shared.Validations;
 
-public class DtoValidation
-{
-    public async Task<Result> ValidateAsync<TDto, TDtoValidator>(TDto dto)
+public class DtoValidationHelper<TDto, TDtoValidator>
         where TDto : class
         where TDtoValidator : IValidator<TDto>, new()
+{
+    public async Task<Result> ValidateAsync(TDto dto)
     {
         var validator = new TDtoValidator();
         var validationResult = await validator.ValidateAsync(dto);

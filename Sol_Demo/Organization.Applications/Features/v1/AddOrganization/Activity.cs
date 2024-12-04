@@ -12,6 +12,7 @@ using Utility.Shared.Config;
 using Utility.Shared.Exceptions;
 using Utility.Shared.Response;
 using Utility.Shared.ServiceHandler;
+using Utility.Shared.Validations;
 
 namespace Organization.Applications.Features.v1.AddOrganization;
 
@@ -64,6 +65,39 @@ public class AddOrganizationValidator : AbstractValidator<AddOrganizationRequest
     }
 }
 
+public interface IAddOrgnizationValidationService : IServiceHandlerVoidAsync<AddOrganizationRequestDto>
+{
+}
+
+[ScopedService(typeof(IAddOrgnizationValidationService))]
+public class AddOrgnizationValidationService : IAddOrgnizationValidationService
+{
+    async Task<Result> IServiceHandlerVoidAsync<AddOrganizationRequestDto>.HandleAsync(AddOrganizationRequestDto @params)
+    {
+        try
+        {
+            if (@params is null)
+                return ResultExceptionFactory.Error($"{nameof(AddOrganizationRequestDto)} object is null", HttpStatusCode.BadRequest);
+
+            // Validate
+            DtoValidationHelper<AddOrganizationRequestDto, AddOrganizationValidator> dtoValidationHelper =
+                new DtoValidationHelper<AddOrganizationRequestDto, AddOrganizationValidator>();
+
+            AddOrganizationRequestDto addOrganizationRequestDto = @params;
+
+            var validationResult = await dtoValidationHelper.ValidateAsync(addOrganizationRequestDto);
+            if (validationResult.IsFailed)
+                return ResultExceptionFactory.Error(validationResult.Errors[0]);
+
+            return Result.Ok();
+        }
+        catch (Exception ex)
+        {
+            return ResultExceptionFactory.Error(ex.Message, HttpStatusCode.InternalServerError);
+        }
+    }
+}
+
 #endregion Validation Service
 
 #region Decrypt and Validate Service
@@ -78,16 +112,16 @@ public class AddOrganizationDecrypteAndValidateParameters
     }
 }
 
-public interface IAddOrganizationDecrypteAndValidateService : IServiceHandlerAsync<AddOrganizationDecrypteAndValidateParameters, AddOrganizationRequestDto>
+public interface IAddOrganizationDecrypteService : IServiceHandlerAsync<AddOrganizationDecrypteAndValidateParameters, AddOrganizationRequestDto>
 {
 }
 
-[ScopedService(typeof(IAddOrganizationDecrypteAndValidateService))]
-public class AddOrganizationDecrypteAndValidateService : IAddOrganizationDecrypteAndValidateService
+[ScopedService(typeof(IAddOrganizationDecrypteService))]
+public class AddOrganizationDecrypteService : IAddOrganizationDecrypteService
 {
     private readonly IConfigHelper _configHelper;
 
-    public AddOrganizationDecrypteAndValidateService(IConfigHelper configHelper)
+    public AddOrganizationDecrypteService(IConfigHelper configHelper)
     {
         _configHelper = configHelper;
     }
@@ -108,14 +142,18 @@ public class AddOrganizationDecrypteAndValidateService : IAddOrganizationDecrypt
             if (aesSecret.IsFailed)
                 return ResultExceptionFactory.Error<AddOrganizationRequestDto>("Aes Secret Key not found", HttpStatusCode.NotFound);
 
-            // Decrypt and Validate
-            AesDecryptAndValidation aesDecryptAndValidation = new AesDecryptAndValidation(aesSecret.Value);
-            var aesDecryptionAndValidationResult = await aesDecryptAndValidation.WrapperAsync<AddOrganizationRequestDto, AddOrganizationValidator>(aesRequestDto);
+            // Decrypt Request
+            AesDecrypteWrapper<AddOrganizationRequestDto> aesDecrypteWrapper =
+                new AesDecrypteWrapper<AddOrganizationRequestDto>();
 
-            if (aesDecryptionAndValidationResult.IsFailed)
-                return ResultExceptionFactory.Error<AddOrganizationRequestDto>(aesDecryptionAndValidationResult.Errors[0]);
+            AesDecrypteWrapperParameter aesDecrypteWrapperParameter =
+                new AesDecrypteWrapperParameter(aesRequestDto, aesSecret.Value);
 
-            return Result.Ok(aesDecryptionAndValidationResult.Value);
+            var aesDecryptionResult = await aesDecrypteWrapper.HandleAsync(aesDecrypteWrapperParameter);
+            if (aesDecryptionResult.IsFailed)
+                return ResultExceptionFactory.Error<AddOrganizationRequestDto>(aesDecryptionResult.Errors[0]);
+
+            return Result.Ok(aesDecryptionResult.Value);
         }
         catch (Exception ex)
         {
@@ -205,21 +243,24 @@ public class AddOrganizationCommand : IRequest<DataResponse<AddOrganizationRespo
 public class AddOrganizationCommandHandler : IRequestHandler<AddOrganizationCommand, DataResponse<AddOrganizationResponseDto>>
 {
     private readonly IDataResponseFactory _dataResponseFactory;
-    private readonly IAddOrganizationDecrypteAndValidateService _addOrganizationDecrypteAndValidateService;
+    private readonly IAddOrganizationDecrypteService _addOrganizationDecrypteService;
+    private readonly IAddOrgnizationValidationService _addOrgnizationValidationService;
     private readonly IAddOrganizationRequestEntityMapService _addOrganizationRequestEntityMapService;
     private readonly IAddOrganizationDbService _addOrganizationDbService;
     private readonly IAddOrganizationResponseService _addOrganizationResponseService;
 
     public AddOrganizationCommandHandler(
         IDataResponseFactory dataResponseFactory,
-        IAddOrganizationDecrypteAndValidateService addOrganizationDecrypteAndValidateService,
+        IAddOrganizationDecrypteService addOrganizationDecrypteService,
+        IAddOrgnizationValidationService orgnizationValidationService,
         IAddOrganizationRequestEntityMapService addOrganizationRequestEntityMapService,
         IAddOrganizationDbService addOrganizationDbService,
         IAddOrganizationResponseService addOrganizationResponseService
         )
     {
         _dataResponseFactory = dataResponseFactory;
-        _addOrganizationDecrypteAndValidateService = addOrganizationDecrypteAndValidateService;
+        _addOrganizationDecrypteService = addOrganizationDecrypteService;
+        _addOrgnizationValidationService = orgnizationValidationService;
         _addOrganizationRequestEntityMapService = addOrganizationRequestEntityMapService;
         _addOrganizationDbService = addOrganizationDbService;
         _addOrganizationResponseService = addOrganizationResponseService;
@@ -236,12 +277,17 @@ public class AddOrganizationCommandHandler : IRequestHandler<AddOrganizationComm
             if (aesRequestDto is null)
                 return await _dataResponseFactory.ErrorAsync<AddOrganizationResponseDto>("Request object is null", (int)HttpStatusCode.BadRequest);
 
-            // Decrypt and Validate
-            var aesDecryptionAndValidationResult = await _addOrganizationDecrypteAndValidateService.HandleAsync(new AddOrganizationDecrypteAndValidateParameters(aesRequestDto));
-            if (aesDecryptionAndValidationResult.IsFailed)
-                return await _dataResponseFactory.ErrorAsync<AddOrganizationResponseDto>(aesDecryptionAndValidationResult.Errors[0].Message, (int)HttpStatusCode.BadRequest);
+            // Decrypt
+            var aesDecryptionResult = await _addOrganizationDecrypteService.HandleAsync(new AddOrganizationDecrypteAndValidateParameters(aesRequestDto));
+            if (aesDecryptionResult.IsFailed)
+                return await _dataResponseFactory.ErrorAsync<AddOrganizationResponseDto>(aesDecryptionResult.Errors[0].Message, (int)HttpStatusCode.BadRequest);
 
-            AddOrganizationRequestDto addOrganizationRequestDto = aesDecryptionAndValidationResult.Value!;
+            AddOrganizationRequestDto addOrganizationRequestDto = aesDecryptionResult.Value!;
+
+            // Validation
+            var validationResult = await _addOrgnizationValidationService.HandleAsync(addOrganizationRequestDto);
+            if (validationResult.IsFailed)
+                return await _dataResponseFactory.ErrorAsync<AddOrganizationResponseDto>(validationResult.Errors[0].Message, (int)HttpStatusCode.BadRequest);
 
             // Map AddOraganizationRequestDTO to TOrganization Entity
             var organizationResult = await _addOrganizationRequestEntityMapService.HandleAsync(addOrganizationRequestDto);

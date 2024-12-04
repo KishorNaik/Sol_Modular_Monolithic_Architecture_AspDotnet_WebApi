@@ -16,7 +16,8 @@ namespace Organization.Tests.Features.AddOrganisations;
 public class AddOrganisationUnitTests
 {
     private readonly Mock<IDataResponseFactory> _mockDataResponseFactory;
-    private readonly Mock<IAddOrganizationDecrypteAndValidateService> _mockDecrypteAndValidateService;
+    private readonly Mock<IAddOrganizationDecrypteService> _mockDecrypteService;
+    private readonly Mock<IAddOrgnizationValidationService> _mockValidationService;
     private readonly Mock<IAddOrganizationRequestEntityMapService> _mockRequestEntityMapService;
     private readonly Mock<IAddOrganizationDbService> _mockDbService;
     private readonly Mock<IAddOrganizationResponseService> _mockResponseService;
@@ -25,14 +26,16 @@ public class AddOrganisationUnitTests
     public AddOrganisationUnitTests()
     {
         _mockDataResponseFactory = new Mock<IDataResponseFactory>();
-        _mockDecrypteAndValidateService = new Mock<IAddOrganizationDecrypteAndValidateService>();
+        _mockDecrypteService = new Mock<IAddOrganizationDecrypteService>();
+        _mockValidationService = new Mock<IAddOrgnizationValidationService>();
         _mockRequestEntityMapService = new Mock<IAddOrganizationRequestEntityMapService>();
         _mockDbService = new Mock<IAddOrganizationDbService>();
         _mockResponseService = new Mock<IAddOrganizationResponseService>();
 
         _handler = new AddOrganizationCommandHandler(
            _mockDataResponseFactory.Object,
-           _mockDecrypteAndValidateService.Object,
+           _mockDecrypteService.Object,
+           _mockValidationService.Object,
            _mockRequestEntityMapService.Object,
            _mockDbService.Object,
            _mockResponseService.Object
@@ -76,15 +79,44 @@ public class AddOrganisationUnitTests
     }
 
     [Fact]
-    public async Task Should_Return_Failed_When_Decrypte_And_Validate_Is_Failed()
+    public async Task Should_Return_Failed_When_Decrypte_Is_Failed()
     {
         // Arrange
         var aesRequestDto = new AesRequestDto();
         var command = new AddOrganizationCommand(aesRequestDto);
 
-        _mockDecrypteAndValidateService
+        _mockDecrypteService
             .Setup((service) => service.HandleAsync(It.IsAny<AddOrganizationDecrypteAndValidateParameters>()))
             .ReturnsAsync(ResultExceptionFactory.Error<AddOrganizationRequestDto>("Failed", HttpStatusCode.BadRequest));
+
+        _mockDataResponseFactory
+          .Setup(factory => factory.ErrorAsync<AddOrganizationResponseDto>("Failed", Convert.ToInt32(HttpStatusCode.BadRequest), null!))
+          .ReturnsAsync(new DataResponse<AddOrganizationResponseDto> { Success = false, StatusCode = (int)HttpStatusCode.BadRequest });
+
+        // Act
+        var result = await _handler.Handle(command, CancellationToken.None);
+
+        // Assert
+        Assert.False(result.Success);
+        Assert.Equal((int)HttpStatusCode.BadRequest, result.StatusCode);
+    }
+
+    [Fact]
+    public async Task Should_Return_Failed_When_Validation_Is_Failed()
+    {
+        // Arrange
+        var aesRequestDto = new AesRequestDto();
+        var command = new AddOrganizationCommand(aesRequestDto);
+
+        var addOrganizationRequestDto = new AddOrganizationRequestDto();
+
+        _mockDecrypteService
+          .Setup((service) => service.HandleAsync(It.IsAny<AddOrganizationDecrypteAndValidateParameters>()))
+          .ReturnsAsync(Result.Ok(addOrganizationRequestDto));
+
+        _mockValidationService
+            .Setup((service) => service.HandleAsync(It.IsAny<AddOrganizationRequestDto>()))
+            .ReturnsAsync(ResultExceptionFactory.Error("Failed", HttpStatusCode.BadRequest));
 
         _mockDataResponseFactory
           .Setup(factory => factory.ErrorAsync<AddOrganizationResponseDto>("Failed", Convert.ToInt32(HttpStatusCode.BadRequest), null!))
@@ -107,9 +139,13 @@ public class AddOrganisationUnitTests
 
         var addOrganizationRequestDto = new AddOrganizationRequestDto();
 
-        _mockDecrypteAndValidateService
+        _mockDecrypteService
             .Setup((service) => service.HandleAsync(It.IsAny<AddOrganizationDecrypteAndValidateParameters>()))
             .ReturnsAsync(Result.Ok(addOrganizationRequestDto));
+
+        _mockValidationService
+           .Setup((service) => service.HandleAsync(It.IsAny<AddOrganizationRequestDto>()))
+           .ReturnsAsync(Result.Ok());
 
         _mockRequestEntityMapService
             .Setup((service) => service.HandleAsync(addOrganizationRequestDto))
@@ -137,9 +173,13 @@ public class AddOrganisationUnitTests
         var addOrganizationRequestDto = new AddOrganizationRequestDto();
         var torganization = new Torganization();
 
-        _mockDecrypteAndValidateService
+        _mockDecrypteService
             .Setup((service) => service.HandleAsync(It.IsAny<AddOrganizationDecrypteAndValidateParameters>()))
             .ReturnsAsync(Result.Ok(addOrganizationRequestDto));
+
+        _mockValidationService
+          .Setup((service) => service.HandleAsync(It.IsAny<AddOrganizationRequestDto>()))
+          .ReturnsAsync(Result.Ok());
 
         _mockRequestEntityMapService
             .Setup((service) => service.HandleAsync(addOrganizationRequestDto))
@@ -171,9 +211,13 @@ public class AddOrganisationUnitTests
         var addOrganizationRequestDto = new AddOrganizationRequestDto();
         var torganization = new Torganization();
 
-        _mockDecrypteAndValidateService
+        _mockDecrypteService
             .Setup((service) => service.HandleAsync(It.IsAny<AddOrganizationDecrypteAndValidateParameters>()))
             .ReturnsAsync(Result.Ok(addOrganizationRequestDto));
+
+        _mockValidationService
+          .Setup((service) => service.HandleAsync(It.IsAny<AddOrganizationRequestDto>()))
+          .ReturnsAsync(Result.Ok());
 
         _mockRequestEntityMapService
             .Setup((service) => service.HandleAsync(addOrganizationRequestDto))
@@ -210,9 +254,13 @@ public class AddOrganisationUnitTests
         var torganization = new Torganization();
         var addOrganizationResponseDto = new AddOrganizationResponseDto();
 
-        _mockDecrypteAndValidateService
+        _mockDecrypteService
             .Setup((service) => service.HandleAsync(It.IsAny<AddOrganizationDecrypteAndValidateParameters>()))
             .ReturnsAsync(Result.Ok(addOrganizationRequestDto));
+
+        _mockValidationService
+          .Setup((service) => service.HandleAsync(It.IsAny<AddOrganizationRequestDto>()))
+          .ReturnsAsync(Result.Ok());
 
         _mockRequestEntityMapService
             .Setup((service) => service.HandleAsync(addOrganizationRequestDto))

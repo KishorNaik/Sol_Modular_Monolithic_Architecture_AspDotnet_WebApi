@@ -7,6 +7,11 @@ public interface IServiceHandlerAsync<TParams, TResult>
     Task<Result<TResult>> HandleAsync(TParams @params);
 }
 
+public interface IServiceHandlerAsync<TResult>
+{
+    Task<Result<TResult>> HandleAsync();
+}
+
 public interface IServiceHandlerVoidAsync<TParams>
 {
     Task<Result> HandleAsync(TParams @params);
