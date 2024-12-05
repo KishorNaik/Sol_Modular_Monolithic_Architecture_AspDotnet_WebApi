@@ -21,6 +21,7 @@ public class AddOrganisationUnitTests
     private readonly Mock<IAddOrganizationRequestEntityMapService> _mockRequestEntityMapService;
     private readonly Mock<IAddOrganizationDbService> _mockDbService;
     private readonly Mock<IAddOrganizationResponseService> _mockResponseService;
+    private readonly Mock<IMediator> _mockMediator;
     private readonly IRequestHandler<AddOrganizationCommand, DataResponse<AesResponseDto>> _handler;
 
     public AddOrganisationUnitTests()
@@ -30,6 +31,7 @@ public class AddOrganisationUnitTests
         _mockValidationService = new Mock<IAddOrgnizationValidationService>();
         _mockRequestEntityMapService = new Mock<IAddOrganizationRequestEntityMapService>();
         _mockDbService = new Mock<IAddOrganizationDbService>();
+        _mockMediator = new Mock<IMediator>();
         _mockResponseService = new Mock<IAddOrganizationResponseService>();
 
         _handler = new AddOrganizationCommandHandler(
@@ -38,7 +40,8 @@ public class AddOrganisationUnitTests
            _mockValidationService.Object,
            _mockRequestEntityMapService.Object,
            _mockDbService.Object,
-           _mockResponseService.Object
+           _mockResponseService.Object,
+           _mockMediator.Object
        );
     }
 
@@ -202,6 +205,48 @@ public class AddOrganisationUnitTests
     }
 
     [Fact]
+    public async Task Should_Return_Failed_When_Organization_Created_Domain_Event_Failed()
+    {
+        // Arrange
+        var aesRequestDto = new AesRequestDto();
+        var command = new AddOrganizationCommand(aesRequestDto);
+
+        var addOrganizationRequestDto = new AddOrganizationRequestDto();
+        var torganization = new Torganization();
+
+        _mockDecrypteService
+            .Setup((service) => service.HandleAsync(It.IsAny<AddOrganizationDecrypteAndValidateParameters>()))
+            .ReturnsAsync(Result.Ok(addOrganizationRequestDto));
+
+        _mockValidationService
+          .Setup((service) => service.HandleAsync(It.IsAny<AddOrganizationRequestDto>()))
+          .ReturnsAsync(Result.Ok());
+
+        _mockRequestEntityMapService
+            .Setup((service) => service.HandleAsync(addOrganizationRequestDto))
+            .ReturnsAsync(Result.Ok(torganization));
+
+        _mockDbService
+            .Setup((service) => service.HandleAsync(It.IsAny<AddOrganizationSqlParameters>()))
+            .ReturnsAsync(Result.Ok(torganization));
+
+        _mockMediator
+            .Setup((service) => service.Publish(It.IsAny<OrganizationCreatedDomainEvent>(), CancellationToken.None))
+            .Throws(new Exception("Failed"));
+
+        _mockDataResponseFactory
+          .Setup(factory => factory.ErrorAsync<AesResponseDto>("Failed", Convert.ToInt32(HttpStatusCode.InternalServerError), null!))
+          .ReturnsAsync(new DataResponse<AesResponseDto> { Success = false, StatusCode = (int)HttpStatusCode.InternalServerError });
+
+        // Act
+        var result = await _handler.Handle(command, CancellationToken.None);
+
+        // Assert
+        Assert.False(result.Success);
+        Assert.Equal((int)HttpStatusCode.InternalServerError, result.StatusCode);
+    }
+
+    [Fact]
     public async Task Should_Return_Failed_When_Add_Organization_Response_Failed()
     {
         // Arrange
@@ -226,6 +271,10 @@ public class AddOrganisationUnitTests
         _mockDbService
             .Setup((service) => service.HandleAsync(It.IsAny<AddOrganizationSqlParameters>()))
             .ReturnsAsync(Result.Ok(torganization));
+
+        _mockMediator
+           .Setup((service) => service.Publish(It.IsAny<OrganizationCreatedDomainEvent>(), CancellationToken.None))
+           .Returns(Task.CompletedTask);
 
         _mockResponseService
             .Setup((service) => service.HandleAsync(torganization))
@@ -269,6 +318,10 @@ public class AddOrganisationUnitTests
         _mockDbService
             .Setup((service) => service.HandleAsync(It.IsAny<AddOrganizationSqlParameters>()))
             .ReturnsAsync(Result.Ok(torganization));
+
+        _mockMediator
+          .Setup((service) => service.Publish(It.IsAny<OrganizationCreatedDomainEvent>(), CancellationToken.None))
+          .Returns(Task.CompletedTask);
 
         _mockResponseService
             .Setup((service) => service.HandleAsync(torganization))

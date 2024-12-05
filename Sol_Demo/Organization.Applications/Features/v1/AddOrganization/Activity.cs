@@ -1,8 +1,12 @@
 ﻿using FluentResults;
 using FluentValidation;
+using Hangfire;
+using Microsoft.Extensions.Logging;
 using Models.Shared.Constant;
 using Models.Shared.Requests;
+using NetTopologySuite.Utilities;
 using Newtonsoft.Json;
+using Organization.Applications.Shared.Cache;
 using Organization.Contracts.Features.AddOrganizations;
 using Organization.Infrastructures.Entities;
 using Organization.Infrastructures.Services.AddOrganization;
@@ -101,7 +105,7 @@ public class AddOrgnizationValidationService : IAddOrgnizationValidationService
 
 #endregion Validation Service
 
-#region Decrypt and Validate Service
+#region Decrypt Service
 
 public class AddOrganizationDecrypteAndValidateParameters
 {
@@ -163,7 +167,7 @@ public class AddOrganizationDecrypteService : IAddOrganizationDecrypteService
     }
 }
 
-#endregion Decrypt and Validate Service
+#endregion Decrypt Service
 
 #region Add Organization Map Service
 
@@ -196,6 +200,57 @@ public class AddOrganizationRequestEntityMapService : IAddOrganizationRequestEnt
 }
 
 #endregion Add Organization Map Service
+
+#region Domain Event
+
+public class OrganizationCreatedDomainEvent : INotification
+{
+    public Guid Identifier { get; }
+
+    public OrganizationCreatedDomainEvent(Guid identifier)
+    {
+        this.Identifier = identifier;
+    }
+}
+
+public class OrganizationCreatedDomainEventHandler : INotificationHandler<OrganizationCreatedDomainEvent>
+{
+    private readonly IOrganizationSharedCacheService _organizationSharedCacheService;
+
+    private readonly ILogger<OrganizationCreatedDomainEventHandler> _logger;
+
+    public OrganizationCreatedDomainEventHandler(IOrganizationSharedCacheService organizationSharedCacheService, ILogger<OrganizationCreatedDomainEventHandler> logger)
+    {
+        _organizationSharedCacheService = organizationSharedCacheService;
+        _logger = logger;
+    }
+
+    private async Task HandleCacheAsync(OrganizationCreatedDomainEvent notification, CancellationToken cancellationToken)
+    {
+        var result = await _organizationSharedCacheService.HandleAsync(
+            new OrganizationSharedCacheServiceParameter(notification.Identifier, cancellationToken));
+
+        if (result.IsFailed)
+            _logger.LogError(result.Errors[0].Message);
+    }
+
+    Task INotificationHandler<OrganizationCreatedDomainEvent>.Handle(OrganizationCreatedDomainEvent notification, CancellationToken cancellationToken)
+    {
+        try
+        {
+            _ = BackgroundJob.Enqueue(() => HandleCacheAsync(notification, cancellationToken));
+
+            return Task.CompletedTask;
+        }
+        catch
+        {
+            _logger.LogError("Error in AddOrganizationDomainEventHandler");
+            throw;
+        }
+    }
+}
+
+#endregion Domain Event
 
 #region Add Organization Response Service
 
@@ -269,6 +324,7 @@ public class AddOrganizationCommandHandler : IRequestHandler<AddOrganizationComm
     private readonly IAddOrganizationRequestEntityMapService _addOrganizationRequestEntityMapService;
     private readonly IAddOrganizationDbService _addOrganizationDbService;
     private readonly IAddOrganizationResponseService _addOrganizationResponseService;
+    private readonly IMediator _mediator;
 
     public AddOrganizationCommandHandler(
         IDataResponseFactory dataResponseFactory,
@@ -276,7 +332,8 @@ public class AddOrganizationCommandHandler : IRequestHandler<AddOrganizationComm
         IAddOrgnizationValidationService orgnizationValidationService,
         IAddOrganizationRequestEntityMapService addOrganizationRequestEntityMapService,
         IAddOrganizationDbService addOrganizationDbService,
-        IAddOrganizationResponseService addOrganizationResponseService
+        IAddOrganizationResponseService addOrganizationResponseService,
+        IMediator mediator
         )
     {
         _dataResponseFactory = dataResponseFactory;
@@ -285,6 +342,7 @@ public class AddOrganizationCommandHandler : IRequestHandler<AddOrganizationComm
         _addOrganizationRequestEntityMapService = addOrganizationRequestEntityMapService;
         _addOrganizationDbService = addOrganizationDbService;
         _addOrganizationResponseService = addOrganizationResponseService;
+        _mediator = mediator;
     }
 
     async Task<DataResponse<AesResponseDto>> IRequestHandler<AddOrganizationCommand, DataResponse<AesResponseDto>>.Handle(AddOrganizationCommand request, CancellationToken cancellationToken)
@@ -323,6 +381,9 @@ public class AddOrganizationCommandHandler : IRequestHandler<AddOrganizationComm
                 return await _dataResponseFactory.ErrorAsync<AesResponseDto>(addOrganizationResult.Errors[0].Message, (int)HttpStatusCode.BadRequest);
 
             torganization = addOrganizationResult.Value!;
+
+            // Publish Domain Event
+            _ = _mediator.Publish(new OrganizationCreatedDomainEvent(torganization.Identifier), cancellationToken);
 
             // Response
             var responseResult = await _addOrganizationResponseService.HandleAsync(torganization);
