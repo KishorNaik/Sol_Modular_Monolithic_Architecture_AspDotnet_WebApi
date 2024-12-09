@@ -3,6 +3,7 @@ using FluentValidation;
 using Hangfire;
 using Microsoft.Extensions.Logging;
 using Models.Shared.Constant;
+using Models.Shared.Enums;
 using Models.Shared.Requests;
 using NetTopologySuite.Utilities;
 using Newtonsoft.Json;
@@ -187,7 +188,10 @@ public class AddOrganizationRequestEntityMapService : IAddOrganizationRequestEnt
 
             Torganization torganization = new Torganization
             {
+                Identifier = Guid.NewGuid(),
                 Name = @params.Name,
+                Status = Convert.ToBoolean((int)StatusEnum.Active),
+                CreatedDate = DateTime.UtcNow,
             };
 
             return Result.Ok(torganization);
@@ -225,7 +229,7 @@ public class OrganizationCreatedDomainEventHandler : INotificationHandler<Organi
         _logger = logger;
     }
 
-    private async Task HandleCacheAsync(OrganizationCreatedDomainEvent notification, CancellationToken cancellationToken)
+    public async Task HandleCacheAsync(OrganizationCreatedDomainEvent notification, CancellationToken cancellationToken)
     {
         var result = await _organizationSharedCacheService.HandleAsync(
             new OrganizationSharedCacheServiceParameter(notification.Identifier, cancellationToken));
