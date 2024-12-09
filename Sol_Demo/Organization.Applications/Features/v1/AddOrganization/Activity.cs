@@ -35,12 +35,12 @@ public class AddOrganizationController : OrganizationBaseController
     {
     }
 
-    [HttpPost("create")]
+    [HttpPost()]
     [MapToApiVersion(1)]
     [DisableRateLimiting]
     [AllowAnonymous]
-    [ProducesResponseType<DataResponse<AddOrganizationResponseDto>>((int)HttpStatusCode.Created)]
-    [ProducesResponseType<DataResponse<AddOrganizationResponseDto>>((int)HttpStatusCode.BadRequest)]
+    [ProducesResponseType<DataResponse<AesResponseDto>>((int)HttpStatusCode.Created)]
+    [ProducesResponseType<DataResponse<AesResponseDto>>((int)HttpStatusCode.BadRequest)]
     public async Task<IActionResult> CreateAsync([FromBody] AesRequestDto request, CancellationToken cancellationToken = default)
     {
         var response = await this.Mediator.Send(new AddOrganizationCommand(request), cancellationToken);
@@ -52,6 +52,7 @@ public class AddOrganizationController : OrganizationBaseController
 
 #region Validation Service
 
+[ScopedService]
 public class AddOrganizationValidator : AbstractValidator<AddOrganizationRequestDto>
 {
     public AddOrganizationValidator()
@@ -78,6 +79,13 @@ public interface IAddOrgnizationValidationService : IServiceHandlerVoidAsync<Add
 [ScopedService(typeof(IAddOrgnizationValidationService))]
 public class AddOrgnizationValidationService : IAddOrgnizationValidationService
 {
+    private readonly IServiceProvider _serviceProvider;
+
+    public AddOrgnizationValidationService(IServiceProvider serviceProvider)
+    {
+        _serviceProvider = serviceProvider;
+    }
+
     async Task<Result> IServiceHandlerVoidAsync<AddOrganizationRequestDto>.HandleAsync(AddOrganizationRequestDto @params)
     {
         try
@@ -87,7 +95,7 @@ public class AddOrgnizationValidationService : IAddOrgnizationValidationService
 
             // Validate
             DtoValidationHelper<AddOrganizationRequestDto, AddOrganizationValidator> dtoValidationHelper =
-                new DtoValidationHelper<AddOrganizationRequestDto, AddOrganizationValidator>();
+                new DtoValidationHelper<AddOrganizationRequestDto, AddOrganizationValidator>(_serviceProvider);
 
             AddOrganizationRequestDto addOrganizationRequestDto = @params;
 
@@ -108,17 +116,17 @@ public class AddOrgnizationValidationService : IAddOrgnizationValidationService
 
 #region Decrypt Service
 
-public class AddOrganizationDecrypteAndValidateParameters
+public class AddOrganizationDecrypteParameters
 {
     public AesRequestDto? Request { get; }
 
-    public AddOrganizationDecrypteAndValidateParameters(AesRequestDto request)
+    public AddOrganizationDecrypteParameters(AesRequestDto request)
     {
         Request = request;
     }
 }
 
-public interface IAddOrganizationDecrypteService : IServiceHandlerAsync<AddOrganizationDecrypteAndValidateParameters, AddOrganizationRequestDto>
+public interface IAddOrganizationDecrypteService : IServiceHandlerAsync<AddOrganizationDecrypteParameters, AddOrganizationRequestDto>
 {
 }
 
@@ -132,12 +140,12 @@ public class AddOrganizationDecrypteService : IAddOrganizationDecrypteService
         _configHelper = configHelper;
     }
 
-    async Task<Result<AddOrganizationRequestDto>> IServiceHandlerAsync<AddOrganizationDecrypteAndValidateParameters, AddOrganizationRequestDto>.HandleAsync(AddOrganizationDecrypteAndValidateParameters @params)
+    async Task<Result<AddOrganizationRequestDto>> IServiceHandlerAsync<AddOrganizationDecrypteParameters, AddOrganizationRequestDto>.HandleAsync(AddOrganizationDecrypteParameters @params)
     {
         try
         {
             if (@params is null)
-                return ResultExceptionFactory.Error<AddOrganizationRequestDto>($"{nameof(AddOrganizationDecrypteAndValidateParameters)} object is null", HttpStatusCode.BadRequest);
+                return ResultExceptionFactory.Error<AddOrganizationRequestDto>($"{nameof(AddOrganizationDecrypteParameters)} object is null", HttpStatusCode.BadRequest);
 
             var aesRequestDto = @params.Request;
             if (aesRequestDto is null)
@@ -149,11 +157,11 @@ public class AddOrganizationDecrypteService : IAddOrganizationDecrypteService
                 return ResultExceptionFactory.Error<AddOrganizationRequestDto>("Aes Secret Key not found", HttpStatusCode.NotFound);
 
             // Decrypt Request
-            AesDecrypteWrapper<AddOrganizationRequestDto> aesDecrypteWrapper =
-                new AesDecrypteWrapper<AddOrganizationRequestDto>();
+            IAesDecrypteWrapper<AesRequestDto, AddOrganizationRequestDto> aesDecrypteWrapper =
+                new AesDecrypteWrapper<AesRequestDto, AddOrganizationRequestDto>();
 
-            AesDecrypteWrapperParameter aesDecrypteWrapperParameter =
-                new AesDecrypteWrapperParameter(aesRequestDto, aesSecret.Value);
+            AesDecrypteWrapperParameter<AesRequestDto> aesDecrypteWrapperParameter =
+                new AesDecrypteWrapperParameter<AesRequestDto>(aesRequestDto, aesSecret.Value);
 
             var aesDecryptionResult = await aesDecrypteWrapper.HandleAsync(aesDecrypteWrapperParameter);
             if (aesDecryptionResult.IsFailed)
@@ -172,34 +180,69 @@ public class AddOrganizationDecrypteService : IAddOrganizationDecrypteService
 
 #region Add Organization Map Service
 
-public interface IAddOrganizationRequestEntityMapService : IServiceHandlerAsync<AddOrganizationRequestDto, Torganization>
+public class AddOrganizationRequestEntityMapParameters
+{
+    public AddOrganizationRequestDto? Request { get; }
+
+    public CancellationToken CancellationToken { get; }
+
+    public AddOrganizationRequestEntityMapParameters(AddOrganizationRequestDto request, CancellationToken cancellationToken)
+    {
+        Request = request;
+        CancellationToken = cancellationToken;
+    }
+}
+
+public class AddOrganizationRequestEntityMapServiceResult
+{
+    public Torganization? Torganization { get; }
+
+    public AddOrganizationRequestEntityMapServiceResult(Torganization torganization)
+    {
+        Torganization = torganization;
+    }
+}
+
+public interface IAddOrganizationRequestEntityMapService : IServiceHandlerAsync<AddOrganizationRequestEntityMapParameters, AddOrganizationRequestEntityMapServiceResult>
 {
 }
 
 [ScopedService(typeof(IAddOrganizationRequestEntityMapService))]
 public class AddOrganizationRequestEntityMapService : IAddOrganizationRequestEntityMapService
 {
-    async Task<Result<Torganization>> IServiceHandlerAsync<AddOrganizationRequestDto, Torganization>.HandleAsync(AddOrganizationRequestDto @params)
+    Task<Result<AddOrganizationRequestEntityMapServiceResult>> IServiceHandlerAsync<AddOrganizationRequestEntityMapParameters, AddOrganizationRequestEntityMapServiceResult>
+        .HandleAsync(AddOrganizationRequestEntityMapParameters @params)
     {
-        try
+        return Task.Run<Result<AddOrganizationRequestEntityMapServiceResult>>(() =>
         {
-            if (@params is null)
-                return ResultExceptionFactory.Error<Torganization>($"{nameof(AddOrganizationRequestDto)} object is null", HttpStatusCode.BadRequest);
-
-            Torganization torganization = new Torganization
+            try
             {
-                Identifier = Guid.NewGuid(),
-                Name = @params.Name,
-                Status = Convert.ToBoolean((int)StatusEnum.Active),
-                CreatedDate = DateTime.UtcNow,
-            };
+                if (@params is null)
+                    return ResultExceptionFactory.Error<AddOrganizationRequestEntityMapServiceResult>($"{nameof(AddOrganizationRequestEntityMapParameters)} object is null", HttpStatusCode.BadRequest);
 
-            return Result.Ok(torganization);
-        }
-        catch (Exception ex)
-        {
-            return ResultExceptionFactory.Error<Torganization>(ex.Message, HttpStatusCode.InternalServerError);
-        }
+                if (@params?.Request is null)
+                    return ResultExceptionFactory.Error<AddOrganizationRequestEntityMapServiceResult>($"{nameof(AddOrganizationRequestDto)} object is null", HttpStatusCode.BadRequest);
+
+                AddOrganizationRequestDto addOrganizationRequestDto = @params.Request;
+
+                Torganization torganization = new Torganization
+                {
+                    Identifier = Guid.NewGuid(),
+                    Name = addOrganizationRequestDto.Name,
+                    Status = Convert.ToBoolean((int)StatusEnum.Active),
+                    CreatedDate = DateTime.UtcNow,
+                };
+
+                AddOrganizationRequestEntityMapServiceResult addOrganizationRequestEntityMapServiceResult
+                    = new AddOrganizationRequestEntityMapServiceResult(torganization);
+
+                return Result.Ok(addOrganizationRequestEntityMapServiceResult);
+            }
+            catch (Exception ex)
+            {
+                return ResultExceptionFactory.Error<AddOrganizationRequestEntityMapServiceResult>(ex.Message, HttpStatusCode.InternalServerError);
+            }
+        }, @params.CancellationToken);
     }
 }
 
@@ -236,6 +279,8 @@ public class OrganizationCreatedDomainEventHandler : INotificationHandler<Organi
 
         if (result.IsFailed)
             _logger.LogError(result.Errors[0].Message);
+
+        _logger.LogInformation($"AddOrganizationDomainEventHandler Cache updated: {result.Value.IsCached}");
     }
 
     Task INotificationHandler<OrganizationCreatedDomainEvent>.Handle(OrganizationCreatedDomainEvent notification, CancellationToken cancellationToken)
@@ -258,7 +303,17 @@ public class OrganizationCreatedDomainEventHandler : INotificationHandler<Organi
 
 #region Add Organization Response Service
 
-public interface IAddOrganizationResponseService : IServiceHandlerAsync<Torganization, AesResponseDto>
+public class AddOrganizationResponseServiceParameters
+{
+    public Torganization? Torganization { get; }
+
+    public AddOrganizationResponseServiceParameters(Torganization torganization)
+    {
+        Torganization = torganization;
+    }
+}
+
+public interface IAddOrganizationResponseService : IServiceHandlerAsync<AddOrganizationResponseServiceParameters, AesResponseDto>
 {
 }
 
@@ -272,32 +327,40 @@ public class AddOrganizationResponseService : IAddOrganizationResponseService
         _configHelper = configHelper;
     }
 
-    async Task<Result<AesResponseDto>> IServiceHandlerAsync<Torganization, AesResponseDto>.HandleAsync(Torganization @params)
+    async Task<Result<AesResponseDto>> IServiceHandlerAsync<AddOrganizationResponseServiceParameters, AesResponseDto>.HandleAsync(AddOrganizationResponseServiceParameters @params)
     {
         try
         {
             if (@params is null)
-                return ResultExceptionFactory.Error<AesResponseDto>($"{nameof(Torganization)} object is null", HttpStatusCode.BadRequest);
+                return ResultExceptionFactory.Error<AesResponseDto>($"{nameof(AddOrganizationResponseServiceParameters)} object is null", HttpStatusCode.BadRequest);
 
             // Get Aes Secret Value from Config Manager
             var aesSecret = _configHelper.GetValue(ConstantValue.AesSecretKey!);
             if (aesSecret.IsFailed)
                 return ResultExceptionFactory.Error<AesResponseDto>("Aes Secret Key not found", HttpStatusCode.NotFound);
 
+            if (@params?.Torganization is null)
+                return ResultExceptionFactory.Error<AesResponseDto>($"{nameof(Torganization)} object is null", HttpStatusCode.BadRequest);
+
             AddOrganizationResponseDto addOrganizationResponseDto = new AddOrganizationResponseDto
             {
-                Identifier = @params.Identifier,
+                Identifier = @params.Torganization.Identifier,
             };
 
             // Encrypt Response
-            AesEncryptWrapper<AddOrganizationResponseDto> aesEncrypteWrapper =
+            IAesEncrypteWrapper<AddOrganizationResponseDto> aesEncrypteWrapper =
                 new AesEncryptWrapper<AddOrganizationResponseDto>();
 
             var aesEncryptionResult = await aesEncrypteWrapper.HandleAsync(new AesEncrypteWrapperParameter<AddOrganizationResponseDto>(aesSecret.Value, addOrganizationResponseDto));
             if (aesEncryptionResult.IsFailed)
                 return ResultExceptionFactory.Error<AesResponseDto>(aesEncryptionResult.Errors[0]);
 
-            return Result.Ok(aesEncryptionResult.Value!);
+            AesResponseDto aesResponseDto = new AesResponseDto
+            {
+                Body = aesEncryptionResult.Value,
+            };
+
+            return Result.Ok(aesResponseDto);
         }
         catch (Exception ex)
         {
@@ -361,7 +424,7 @@ public class AddOrganizationCommandHandler : IRequestHandler<AddOrganizationComm
                 return await _dataResponseFactory.ErrorAsync<AesResponseDto>("Request object is null", (int)HttpStatusCode.BadRequest);
 
             // Decrypt
-            var aesDecryptionResult = await _addOrganizationDecrypteService.HandleAsync(new AddOrganizationDecrypteAndValidateParameters(aesRequestDto));
+            var aesDecryptionResult = await _addOrganizationDecrypteService.HandleAsync(new AddOrganizationDecrypteParameters(aesRequestDto));
             if (aesDecryptionResult.IsFailed)
                 return await _dataResponseFactory.ErrorAsync<AesResponseDto>(aesDecryptionResult.Errors[0].Message, (int)HttpStatusCode.BadRequest);
 
@@ -373,11 +436,12 @@ public class AddOrganizationCommandHandler : IRequestHandler<AddOrganizationComm
                 return await _dataResponseFactory.ErrorAsync<AesResponseDto>(validationResult.Errors[0].Message, (int)HttpStatusCode.BadRequest);
 
             // Map AddOraganizationRequestDTO to TOrganization Entity
-            var organizationResult = await _addOrganizationRequestEntityMapService.HandleAsync(addOrganizationRequestDto);
+            var organizationResult = await _addOrganizationRequestEntityMapService
+                .HandleAsync(new AddOrganizationRequestEntityMapParameters(addOrganizationRequestDto, cancellationToken));
             if (organizationResult.IsFailed)
                 return await _dataResponseFactory.ErrorAsync<AesResponseDto>(organizationResult.Errors[0].Message, (int)HttpStatusCode.BadRequest);
 
-            Torganization torganization = organizationResult.Value!;
+            Torganization torganization = organizationResult.Value.Torganization!;
 
             // Add Organization
             var addOrganizationResult = await _addOrganizationDbService.HandleAsync(new AddOrganizationSqlParameters(torganization, cancellationToken));
@@ -390,7 +454,7 @@ public class AddOrganizationCommandHandler : IRequestHandler<AddOrganizationComm
             _ = _mediator.Publish(new OrganizationCreatedDomainEvent(torganization.Identifier), cancellationToken);
 
             // Response
-            var responseResult = await _addOrganizationResponseService.HandleAsync(torganization);
+            var responseResult = await _addOrganizationResponseService.HandleAsync(new AddOrganizationResponseServiceParameters(torganization));
             if (responseResult.IsFailed)
                 return await _dataResponseFactory.ErrorAsync<AesResponseDto>(responseResult.Errors[0].Message, (int)HttpStatusCode.BadRequest);
 

@@ -1,11 +1,12 @@
 ﻿using FluentResults;
-using MediatR;
 using Microsoft.Extensions.Caching.Distributed;
-using Microsoft.Extensions.Logging;
 using Models.Shared.Constant;
-using Organization.Applications.Features.v1.AddOrganization;
+using Newtonsoft.Json;
+using Organization.Infrastructures.Entities;
 using Organization.Infrastructures.Services.GetOrganizationByIdentifer;
-using System.Threading;
+using Organization.Infrastructures.Services.GetVersionByIdentifier;
+using System.Collections;
+using System.Text;
 using Utility.Shared.Cache;
 using Utility.Shared.Exceptions;
 using Utility.Shared.ServiceHandler;
@@ -25,7 +26,20 @@ public class OrganizationSharedCacheServiceParameter
     }
 }
 
-public interface IOrganizationSharedCacheService : IServiceHandlerVoidAsync<OrganizationSharedCacheServiceParameter>
+public class OrganizationSharedCacheServiceResult
+{
+    public Torganization? Torganization { get; }
+
+    public bool? IsCached { get; }
+
+    public OrganizationSharedCacheServiceResult(Torganization? torganization, bool? isCached)
+    {
+        Torganization = torganization;
+        IsCached = isCached;
+    }
+}
+
+public interface IOrganizationSharedCacheService : IServiceHandlerAsync<OrganizationSharedCacheServiceParameter, OrganizationSharedCacheServiceResult>
 {
 }
 
@@ -34,40 +48,91 @@ public class OrganizationSharedCacheService : IOrganizationSharedCacheService
 {
     private readonly IDistributedCache _distributedCache;
     private readonly IGetOrganizationByIdentifierDbService _getOrganizationByIdentifierDbService;
+    private readonly IGetOrganizationVersionByIdentiferDbService _getOrganizationVersionByIdentiferDbService = null;
 
     public OrganizationSharedCacheService(
         IDistributedCache distributedCache,
-        IGetOrganizationByIdentifierDbService getOrganizationByIdentifierDbService
+        IGetOrganizationByIdentifierDbService getOrganizationByIdentifierDbService,
+        IGetOrganizationVersionByIdentiferDbService getOrganizationVersionByIdentiferDbService
         )
     {
         _distributedCache = distributedCache;
         _getOrganizationByIdentifierDbService = getOrganizationByIdentifierDbService;
+        _getOrganizationVersionByIdentiferDbService = getOrganizationVersionByIdentiferDbService;
     }
 
-    async Task<Result> IServiceHandlerVoidAsync<OrganizationSharedCacheServiceParameter>.HandleAsync(OrganizationSharedCacheServiceParameter @params)
+    async Task<Result<OrganizationSharedCacheServiceResult>> IServiceHandlerAsync<OrganizationSharedCacheServiceParameter, OrganizationSharedCacheServiceResult>.HandleAsync(OrganizationSharedCacheServiceParameter @params)
     {
+        Torganization torganization = null;
+        bool isCached = false;
         try
         {
-            string cacheName = $"Organization-{@params.Identifier}";
+            if (@params is null)
+                return ResultExceptionFactory.Error($"{nameof(OrganizationSharedCacheServiceParameter)} object is null", HttpStatusCode.BadRequest);
 
-            await SqlCacheHelper.RemoveCacheAsync(_distributedCache, cacheName);
+            Guid identifer = @params.Identifier ?? Guid.Empty;
 
-            var organizationResult = await _getOrganizationByIdentifierDbService.HandleAsync(
-                new GetOrganizationByIdentifierSqlParameter(@params.Identifier, @params.CancellationToken)
-            );
+            string cacheName = $"Organization-{identifer}";
 
-            if (organizationResult.IsFailed)
+            string? cacheValue = await _distributedCache.GetStringAsync(cacheName)!;
+
+            if (cacheValue is null)
             {
-                return ResultExceptionFactory.Error(organizationResult.Errors[0]);
+                // Get Organization Data
+                var organizationResult = await _getOrganizationByIdentifierDbService
+                    .HandleAsync(new GetOrganizationByIdentifierSqlParameter(identifer, @params.CancellationToken));
+
+                if (organizationResult.IsFailed)
+                    return ResultExceptionFactory.Error(organizationResult.Errors[0]);
+
+                await SqlCacheHelper.SetCacheAsync(_distributedCache, cacheName, ConstantValue.CacheTime, organizationResult.Value);
+
+                torganization = organizationResult.Value!;
+                isCached = true;
+            }
+            else
+            {
+                Torganization cacheValueResult = JsonConvert.DeserializeObject<Torganization>(cacheValue!)!;
+
+                if (cacheValueResult is null)
+                    return ResultExceptionFactory.Error($"{nameof(Torganization)} object is null", HttpStatusCode.NotFound);
+
+                // Get Row Version
+                var organizationVersion = await _getOrganizationVersionByIdentiferDbService
+                    .HandleAsync(new GetOrganizationVersionByIdentiferSqlParameter(cacheValueResult.Identifier!, @params.CancellationToken));
+
+                if (organizationVersion.IsFailed)
+                    return ResultExceptionFactory.Error(organizationVersion.Errors[0]);
+
+                // Check Row Version
+                if (!cacheValueResult.Version.SequenceEqual(organizationVersion.Value))
+                {
+                    // Get Organization Data
+                    var organizationResult = await _getOrganizationByIdentifierDbService
+                        .HandleAsync(new GetOrganizationByIdentifierSqlParameter(cacheValueResult.Identifier!, @params.CancellationToken));
+
+                    if (organizationResult.IsFailed)
+                        return ResultExceptionFactory.Error(organizationResult.Errors[0]);
+
+                    await SqlCacheHelper.SetCacheAsync(_distributedCache, cacheName, ConstantValue.CacheTime, organizationResult.Value);
+
+                    torganization = organizationResult.Value!;
+                    isCached = true;
+                }
+                else
+                {
+                    torganization = cacheValueResult;
+                    isCached = false;
+                }
             }
 
-            await SqlCacheHelper.SetCacheAsync(_distributedCache, cacheName, ConstantValue.CacheTime, organizationResult.Value);
+            OrganizationSharedCacheServiceResult result = new OrganizationSharedCacheServiceResult(torganization, isCached);
 
-            return Result.Ok();
+            return Result.Ok(result);
         }
         catch (Exception ex)
         {
-            return ResultExceptionFactory.Error(ex.Message, httpStatusCode: HttpStatusCode.InternalServerError);
+            return ResultExceptionFactory.Error(ex.Message, HttpStatusCode.InternalServerError);
         }
     }
 }

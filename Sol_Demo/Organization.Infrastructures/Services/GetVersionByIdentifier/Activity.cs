@@ -21,7 +21,7 @@ public class GetOrganizationVersionByIdentiferSqlParameter
     }
 }
 
-public interface IGetOrganizationVersionByIdentiferDbService : IServiceHandlerAsync<GetOrganizationVersionByIdentiferSqlParameter, string>
+public interface IGetOrganizationVersionByIdentiferDbService : IServiceHandlerAsync<GetOrganizationVersionByIdentiferSqlParameter, byte[]>
 {
 }
 
@@ -35,15 +35,15 @@ public class GetOrganizationVersionByIdentiferDbService : IGetOrganizationVersio
         _organizationDbContext = organizationDbContext;
     }
 
-    async Task<Result<string>> IServiceHandlerAsync<GetOrganizationVersionByIdentiferSqlParameter, string>.HandleAsync(GetOrganizationVersionByIdentiferSqlParameter @params)
+    async Task<Result<byte[]>> IServiceHandlerAsync<GetOrganizationVersionByIdentiferSqlParameter, byte[]>.HandleAsync(GetOrganizationVersionByIdentiferSqlParameter @params)
     {
         try
         {
             if (@params is null)
-                return ResultExceptionFactory.Error<string>($"{nameof(GetOrganizationVersionByIdentiferSqlParameter)}", System.Net.HttpStatusCode.BadRequest);
+                return ResultExceptionFactory.Error<byte[]>($"{nameof(GetOrganizationVersionByIdentiferSqlParameter)}", System.Net.HttpStatusCode.BadRequest);
 
             if (@params.Identifier is null)
-                return ResultExceptionFactory.Error<string>($"{nameof(@params.Identifier)}", System.Net.HttpStatusCode.BadRequest);
+                return ResultExceptionFactory.Error<byte[]>($"{nameof(@params.Identifier)}", System.Net.HttpStatusCode.BadRequest);
 
             var versionResult = (await _organizationDbContext
                 .Torganizations
@@ -51,15 +51,15 @@ public class GetOrganizationVersionByIdentiferDbService : IGetOrganizationVersio
                 .FirstOrDefaultAsync(x => x.Identifier == @params.Identifier, @params.CancellationToken))?.Version;
 
             if (versionResult is null)
-                return ResultExceptionFactory.Error<string>($"{nameof(@params.Identifier)}", System.Net.HttpStatusCode.NotFound);
+                return ResultExceptionFactory.Error<byte[]>($"{nameof(@params.Identifier)}", System.Net.HttpStatusCode.NotFound);
 
-            string versionStr = Encoding.UTF8.GetString(versionResult);
+            //string versionStr = Encoding.UTF8.GetString(versionResult);
 
-            return Result.Ok(versionStr);
+            return Result.Ok(versionResult);
         }
         catch (Exception ex)
         {
-            return ResultExceptionFactory.Error<string>(ex.Message, System.Net.HttpStatusCode.InternalServerError);
+            return ResultExceptionFactory.Error<byte[]>(ex.Message, System.Net.HttpStatusCode.InternalServerError);
         }
     }
 }

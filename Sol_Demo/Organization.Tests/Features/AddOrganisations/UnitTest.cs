@@ -89,7 +89,7 @@ public class AddOrganisationUnitTests
         var command = new AddOrganizationCommand(aesRequestDto);
 
         _mockDecrypteService
-            .Setup((service) => service.HandleAsync(It.IsAny<AddOrganizationDecrypteAndValidateParameters>()))
+            .Setup((service) => service.HandleAsync(It.IsAny<AddOrganizationDecrypteParameters>()))
             .ReturnsAsync(ResultExceptionFactory.Error<AddOrganizationRequestDto>("Failed", HttpStatusCode.BadRequest));
 
         _mockDataResponseFactory
@@ -114,7 +114,7 @@ public class AddOrganisationUnitTests
         var addOrganizationRequestDto = new AddOrganizationRequestDto();
 
         _mockDecrypteService
-          .Setup((service) => service.HandleAsync(It.IsAny<AddOrganizationDecrypteAndValidateParameters>()))
+          .Setup((service) => service.HandleAsync(It.IsAny<AddOrganizationDecrypteParameters>()))
           .ReturnsAsync(Result.Ok(addOrganizationRequestDto));
 
         _mockValidationService
@@ -143,7 +143,7 @@ public class AddOrganisationUnitTests
         var addOrganizationRequestDto = new AddOrganizationRequestDto();
 
         _mockDecrypteService
-            .Setup((service) => service.HandleAsync(It.IsAny<AddOrganizationDecrypteAndValidateParameters>()))
+            .Setup((service) => service.HandleAsync(It.IsAny<AddOrganizationDecrypteParameters>()))
             .ReturnsAsync(Result.Ok(addOrganizationRequestDto));
 
         _mockValidationService
@@ -151,8 +151,8 @@ public class AddOrganisationUnitTests
            .ReturnsAsync(Result.Ok());
 
         _mockRequestEntityMapService
-            .Setup((service) => service.HandleAsync(addOrganizationRequestDto))
-            .ReturnsAsync(ResultExceptionFactory.Error<Torganization>("Failed", HttpStatusCode.BadRequest));
+            .Setup((service) => service.HandleAsync(It.IsAny<AddOrganizationRequestEntityMapParameters>()))
+            .ReturnsAsync(ResultExceptionFactory.Error<AddOrganizationRequestEntityMapServiceResult>("Failed", HttpStatusCode.BadRequest));
 
         _mockDataResponseFactory
           .Setup(factory => factory.ErrorAsync<AesResponseDto>("Failed", Convert.ToInt32(HttpStatusCode.BadRequest), null!))
@@ -175,9 +175,11 @@ public class AddOrganisationUnitTests
 
         var addOrganizationRequestDto = new AddOrganizationRequestDto();
         var torganization = new Torganization();
+        //AddOrganizationRequestEntityMapParameters addOrganizationRequestEntityMapParameters = new AddOrganizationRequestEntityMapParameters(addOrganizationRequestDto, CancellationToken.None);
+        AddOrganizationRequestEntityMapServiceResult addOrganizationRequestEntityMapServiceResult = new AddOrganizationRequestEntityMapServiceResult(torganization);
 
         _mockDecrypteService
-            .Setup((service) => service.HandleAsync(It.IsAny<AddOrganizationDecrypteAndValidateParameters>()))
+            .Setup((service) => service.HandleAsync(It.IsAny<AddOrganizationDecrypteParameters>()))
             .ReturnsAsync(Result.Ok(addOrganizationRequestDto));
 
         _mockValidationService
@@ -185,8 +187,8 @@ public class AddOrganisationUnitTests
           .ReturnsAsync(Result.Ok());
 
         _mockRequestEntityMapService
-            .Setup((service) => service.HandleAsync(addOrganizationRequestDto))
-            .ReturnsAsync(Result.Ok(torganization));
+            .Setup((service) => service.HandleAsync(It.IsAny<AddOrganizationRequestEntityMapParameters>()))
+            .ReturnsAsync(Result.Ok(addOrganizationRequestEntityMapServiceResult));
 
         _mockDbService
             .Setup((service) => service.HandleAsync(It.IsAny<AddOrganizationSqlParameters>()))
@@ -213,9 +215,11 @@ public class AddOrganisationUnitTests
 
         var addOrganizationRequestDto = new AddOrganizationRequestDto();
         var torganization = new Torganization();
+        AddOrganizationRequestEntityMapParameters addOrganizationRequestEntityMapParameters = new AddOrganizationRequestEntityMapParameters(addOrganizationRequestDto, CancellationToken.None);
+        AddOrganizationRequestEntityMapServiceResult addOrganizationRequestEntityMapServiceResult = new AddOrganizationRequestEntityMapServiceResult(torganization);
 
         _mockDecrypteService
-            .Setup((service) => service.HandleAsync(It.IsAny<AddOrganizationDecrypteAndValidateParameters>()))
+            .Setup((service) => service.HandleAsync(It.IsAny<AddOrganizationDecrypteParameters>()))
             .ReturnsAsync(Result.Ok(addOrganizationRequestDto));
 
         _mockValidationService
@@ -223,8 +227,8 @@ public class AddOrganisationUnitTests
           .ReturnsAsync(Result.Ok());
 
         _mockRequestEntityMapService
-            .Setup((service) => service.HandleAsync(addOrganizationRequestDto))
-            .ReturnsAsync(Result.Ok(torganization));
+            .Setup((service) => service.HandleAsync(It.IsAny<AddOrganizationRequestEntityMapParameters>()))
+            .ReturnsAsync(Result.Ok(addOrganizationRequestEntityMapServiceResult));
 
         _mockDbService
             .Setup((service) => service.HandleAsync(It.IsAny<AddOrganizationSqlParameters>()))
@@ -255,9 +259,12 @@ public class AddOrganisationUnitTests
 
         var addOrganizationRequestDto = new AddOrganizationRequestDto();
         var torganization = new Torganization();
+        //AddOrganizationRequestEntityMapParameters addOrganizationRequestEntityMapParameters = new AddOrganizationRequestEntityMapParameters(addOrganizationRequestDto, CancellationToken.None);
+        AddOrganizationRequestEntityMapServiceResult addOrganizationRequestEntityMapServiceResult = new AddOrganizationRequestEntityMapServiceResult(torganization);
+        //AddOrganizationResponseServiceParameters addOrganizationResponseServiceParameters = new AddOrganizationResponseServiceParameters(torganization);
 
         _mockDecrypteService
-            .Setup((service) => service.HandleAsync(It.IsAny<AddOrganizationDecrypteAndValidateParameters>()))
+            .Setup((service) => service.HandleAsync(It.IsAny<AddOrganizationDecrypteParameters>()))
             .ReturnsAsync(Result.Ok(addOrganizationRequestDto));
 
         _mockValidationService
@@ -265,8 +272,8 @@ public class AddOrganisationUnitTests
           .ReturnsAsync(Result.Ok());
 
         _mockRequestEntityMapService
-            .Setup((service) => service.HandleAsync(addOrganizationRequestDto))
-            .ReturnsAsync(Result.Ok(torganization));
+            .Setup((service) => service.HandleAsync(It.IsAny<AddOrganizationRequestEntityMapParameters>()))
+            .ReturnsAsync(Result.Ok(addOrganizationRequestEntityMapServiceResult));
 
         _mockDbService
             .Setup((service) => service.HandleAsync(It.IsAny<AddOrganizationSqlParameters>()))
@@ -277,7 +284,7 @@ public class AddOrganisationUnitTests
            .Returns(Task.CompletedTask);
 
         _mockResponseService
-            .Setup((service) => service.HandleAsync(torganization))
+            .Setup((service) => service.HandleAsync(It.IsAny<AddOrganizationResponseServiceParameters>()))
             .ReturnsAsync(ResultExceptionFactory.Error<AesResponseDto>("Failed", HttpStatusCode.BadRequest));
 
         _mockDataResponseFactory
@@ -302,9 +309,12 @@ public class AddOrganisationUnitTests
         var addOrganizationRequestDto = new AddOrganizationRequestDto();
         var torganization = new Torganization();
         var aesResponseDTO = new AesResponseDto();
+        //AddOrganizationRequestEntityMapParameters addOrganizationRequestEntityMapParameters = new AddOrganizationRequestEntityMapParameters(addOrganizationRequestDto, CancellationToken.None);
+        AddOrganizationRequestEntityMapServiceResult addOrganizationRequestEntityMapServiceResult = new AddOrganizationRequestEntityMapServiceResult(torganization);
+        //AddOrganizationResponseServiceParameters addOrganizationResponseServiceParameters = new AddOrganizationResponseServiceParameters(torganization);
 
         _mockDecrypteService
-            .Setup((service) => service.HandleAsync(It.IsAny<AddOrganizationDecrypteAndValidateParameters>()))
+            .Setup((service) => service.HandleAsync(It.IsAny<AddOrganizationDecrypteParameters>()))
             .ReturnsAsync(Result.Ok(addOrganizationRequestDto));
 
         _mockValidationService
@@ -312,8 +322,8 @@ public class AddOrganisationUnitTests
           .ReturnsAsync(Result.Ok());
 
         _mockRequestEntityMapService
-            .Setup((service) => service.HandleAsync(addOrganizationRequestDto))
-            .ReturnsAsync(Result.Ok(torganization));
+            .Setup((service) => service.HandleAsync(It.IsAny<AddOrganizationRequestEntityMapParameters>()))
+            .ReturnsAsync(Result.Ok(addOrganizationRequestEntityMapServiceResult));
 
         _mockDbService
             .Setup((service) => service.HandleAsync(It.IsAny<AddOrganizationSqlParameters>()))
@@ -324,7 +334,7 @@ public class AddOrganisationUnitTests
           .Returns(Task.CompletedTask);
 
         _mockResponseService
-            .Setup((service) => service.HandleAsync(torganization))
+            .Setup((service) => service.HandleAsync(It.IsAny<AddOrganizationResponseServiceParameters>()))
             .ReturnsAsync(Result.Ok(aesResponseDTO));
 
         _mockDataResponseFactory
