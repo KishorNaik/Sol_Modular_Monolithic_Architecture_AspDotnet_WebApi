@@ -6,4 +6,9 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\Framework.Packages\Framework.Packages.csproj" />
+    <ProjectReference Include="..\Models.Shared\Models.Shared.csproj" />
+  </ItemGroup>
+
 </Project>
