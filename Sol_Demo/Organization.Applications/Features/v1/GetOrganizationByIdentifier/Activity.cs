@@ -32,8 +32,12 @@ namespace Organization.Applications.Features.v1.GetOrganizationByIdentifier;
 [Tags("Organizations")]
 public class GetOrganizationByIdentifierController : OrganizationBaseController
 {
-    public GetOrganizationByIdentifierController(IMediator mediator) : base(mediator)
+
+    private readonly ILogger<GetOrganizationByIdentifierController> _logger = null;
+
+    public GetOrganizationByIdentifierController(IMediator mediator, ILogger<GetOrganizationByIdentifierController> logger) : base(mediator)
     {
+        _logger = logger;
     }
 
     [HttpGet("{identifier}")]
@@ -45,6 +49,9 @@ public class GetOrganizationByIdentifierController : OrganizationBaseController
     [ProducesResponseType<DataResponse<AesResponseDto>>((int)HttpStatusCode.NotFound)]
     public async Task<IActionResult> GetAsync([FromRoute] GetOrganizationByIdentifierRequestDto request, CancellationToken cancellationToken = default)
     {
+
+        _logger.LogInformation("Get Organization By Identifier");
+
         var response = await this.Mediator.Send(new GetOrganizationByIdentifierQuery(request), cancellationToken);
         return base.StatusCode(Convert.ToInt32(response.StatusCode), response);
     }
@@ -382,6 +389,7 @@ public interface IGetOrganizationByIdentifierDecryptService : IServiceHandlerAsy
 {
 }
 
+[ScopedService(typeof(IGetOrganizationByIdentifierDecryptService))]
 public class GetOrganizationByIdentifierDecryptService : IGetOrganizationByIdentifierDecryptService
 {
     private readonly IConfigHelper _configHelper = null;
