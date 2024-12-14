@@ -72,13 +72,14 @@
     <Build Include="Modules\Users\Schema\UserSchema.sql" />
     <Build Include="Modules\Users\Tables\TUsers.sql" />
     <Build Include="Modules\Users\Tables\TUsersOrganizations.sql" />
-    <Build Include="Modules\Users\Indexes\idx_EmailId_Users.sql" />
-    <Build Include="Modules\Users\Indexes\idx_Identifier_Users.sql" />
-    <Build Include="Modules\Users\Indexes\idx_MobileNo_Users.sql" />
     <Build Include="Modules\Organization\Schema\OrgSchema.sql" />
     <Build Include="Modules\Organization\Tables\TOrganization.sql" />
     <Build Include="Modules\Organization\Indexes\idx_Identifier_Organization.sql" />
     <Build Include="Modules\Organization\Indexes\idx_Name_Organization.sql" />
+    <Build Include="Modules\Users\Tables\TUserCommunications.sql" />
+    <Build Include="Modules\Users\Tables\TUserCredentials.sql" />
+    <Build Include="Modules\Users\Tables\TUserTokens.sql" />
+    <Build Include="Modules\Users\Tables\TUserSettings.sql" />
   </ItemGroup>
   <ItemGroup>
     <None Include="DB_Local.publish.xml" />

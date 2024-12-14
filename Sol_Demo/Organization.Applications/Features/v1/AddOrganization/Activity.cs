@@ -53,7 +53,7 @@ public class AddOrganizationController : OrganizationBaseController
 #region Validation Service
 
 [ScopedService]
-public class AddOrganizationValidator : AbstractValidator<AddOrganizationRequestDto>
+public sealed class AddOrganizationValidator : AbstractValidator<AddOrganizationRequestDto>
 {
     public AddOrganizationValidator()
     {
@@ -77,7 +77,7 @@ public interface IAddOrgnizationValidationService : IServiceHandlerVoidAsync<Add
 }
 
 [ScopedService(typeof(IAddOrgnizationValidationService))]
-public class AddOrgnizationValidationService : IAddOrgnizationValidationService
+public sealed class AddOrgnizationValidationService : IAddOrgnizationValidationService
 {
     private readonly IServiceProvider _serviceProvider;
 
@@ -131,7 +131,7 @@ public interface IAddOrganizationDecrypteService : IServiceHandlerAsync<AddOrgan
 }
 
 [ScopedService(typeof(IAddOrganizationDecrypteService))]
-public class AddOrganizationDecrypteService : IAddOrganizationDecrypteService
+public sealed class AddOrganizationDecrypteService : IAddOrganizationDecrypteService
 {
     private readonly IConfigHelper _configHelper;
 
@@ -208,7 +208,7 @@ public interface IAddOrganizationRequestEntityMapService : IServiceHandlerAsync<
 }
 
 [ScopedService(typeof(IAddOrganizationRequestEntityMapService))]
-public class AddOrganizationRequestEntityMapService : IAddOrganizationRequestEntityMapService
+public sealed class AddOrganizationRequestEntityMapService : IAddOrganizationRequestEntityMapService
 {
     Task<Result<AddOrganizationRequestEntityMapServiceResult>> IServiceHandlerAsync<AddOrganizationRequestEntityMapParameters, AddOrganizationRequestEntityMapServiceResult>
         .HandleAsync(AddOrganizationRequestEntityMapParameters @params)
@@ -260,7 +260,7 @@ public class OrganizationCreatedDomainEvent : INotification
     }
 }
 
-public class OrganizationCreatedDomainEventHandler : INotificationHandler<OrganizationCreatedDomainEvent>
+public sealed class OrganizationCreatedDomainEventHandler : INotificationHandler<OrganizationCreatedDomainEvent>
 {
     private readonly IOrganizationSharedCacheService _organizationSharedCacheService;
 
@@ -318,7 +318,7 @@ public interface IAddOrganizationResponseService : IServiceHandlerAsync<AddOrgan
 }
 
 [ScopedService(typeof(IAddOrganizationResponseService))]
-public class AddOrganizationResponseService : IAddOrganizationResponseService
+public sealed class AddOrganizationResponseService : IAddOrganizationResponseService
 {
     private readonly IConfigHelper _configHelper;
 
@@ -383,7 +383,7 @@ public class AddOrganizationCommand : IRequest<DataResponse<AesResponseDto>>
     }
 }
 
-public class AddOrganizationCommandHandler : IRequestHandler<AddOrganizationCommand, DataResponse<AesResponseDto>>
+public sealed class AddOrganizationCommandHandler : IRequestHandler<AddOrganizationCommand, DataResponse<AesResponseDto>>
 {
     private readonly IDataResponseFactory _dataResponseFactory;
     private readonly IAddOrganizationDecrypteService _addOrganizationDecrypteService;

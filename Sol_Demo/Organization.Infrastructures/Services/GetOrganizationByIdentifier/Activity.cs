@@ -26,7 +26,8 @@ public interface IGetOrganizationByIdentifierDbService : IServiceHandlerAsync<Ge
 }
 
 [ScopedService(typeof(IGetOrganizationByIdentifierDbService))]
-public class GetOrganizationByIdentifierDbService : IGetOrganizationByIdentifierDbService
+
+public sealed class GetOrganizationByIdentifierDbService : IGetOrganizationByIdentifierDbService
 {
     private readonly OrganizationDbContext _organizationDbContext;
 

@@ -26,7 +26,7 @@ public interface IGetOrganizationVersionByIdentiferDbService : IServiceHandlerAs
 }
 
 [ScopedService(typeof(IGetOrganizationVersionByIdentiferDbService))]
-public class GetOrganizationVersionByIdentiferDbService : IGetOrganizationVersionByIdentiferDbService
+public sealed class GetOrganizationVersionByIdentiferDbService : IGetOrganizationVersionByIdentiferDbService
 {
     private readonly OrganizationDbContext _organizationDbContext;
 

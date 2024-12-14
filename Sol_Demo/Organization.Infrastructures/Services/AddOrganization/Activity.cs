@@ -27,7 +27,7 @@ public interface IAddOrganizationDbService : IServiceHandlerAsync<AddOrganizatio
 }
 
 [ScopedService(typeof(IAddOrganizationDbService))]
-public class AddOrganizationDbService : IAddOrganizationDbService
+public sealed class AddOrganizationDbService : IAddOrganizationDbService
 {
     private readonly OrganizationDbContext _organizationDbContext;
 

@@ -62,7 +62,7 @@ public class GetOrganizationByIdentifierController : OrganizationBaseController
 #region Validation Service
 
 [ScopedService]
-public class GetOrganizationByIdentifierValidator : AbstractValidator<GetOrganizationByIdentifierRequestDto>
+public sealed class GetOrganizationByIdentifierValidator : AbstractValidator<GetOrganizationByIdentifierRequestDto>
 {
     private readonly IActionContextAccessor actionContextAccessor;
 
@@ -108,7 +108,7 @@ public interface IGetOrganizationByIdentifierValidationService : IServiceHandler
 }
 
 [ScopedService(typeof(IGetOrganizationByIdentifierValidationService))]
-public class GetOrganizationByIdentifierValidationService : IGetOrganizationByIdentifierValidationService
+public sealed class GetOrganizationByIdentifierValidationService : IGetOrganizationByIdentifierValidationService
 {
     private readonly IServiceProvider _serviceProvider = null;
 
@@ -173,7 +173,7 @@ public interface IGetOrganizationByIdentiferEntityMapService : IServiceHandlerAs
 }
 
 [ScopedService(typeof(IGetOrganizationByIdentiferEntityMapService))]
-public class GetOrganizationByIdentiferEntityMapService : IGetOrganizationByIdentiferEntityMapService
+public sealed class GetOrganizationByIdentiferEntityMapService : IGetOrganizationByIdentiferEntityMapService
 {
     Task<Result<GetOrganizationByIdentifierMapServiceResult>> IServiceHandlerAsync<GetOrganizationByIdentiferEntityMapServiceParameter, GetOrganizationByIdentifierMapServiceResult>.HandleAsync(GetOrganizationByIdentiferEntityMapServiceParameter @params)
     {
@@ -225,7 +225,7 @@ public interface IGetOrganizationByIdentifierResponseService : IServiceHandlerAs
 }
 
 [ScopedService(typeof(IGetOrganizationByIdentifierResponseService))]
-public class GetOrganizationByIdentifierResponseService : IGetOrganizationByIdentifierResponseService
+public sealed class GetOrganizationByIdentifierResponseService : IGetOrganizationByIdentifierResponseService
 {
     private readonly IConfigHelper _configHelper;
 
@@ -294,7 +294,7 @@ public class GetOrganizationByIdentifierQuery : IRequest<DataResponse<AesRespons
     }
 }
 
-public class GetOrganizationByIdentifierQueryHandler : IRequestHandler<GetOrganizationByIdentifierQuery, DataResponse<AesResponseDto>>
+public sealed class GetOrganizationByIdentifierQueryHandler : IRequestHandler<GetOrganizationByIdentifierQuery, DataResponse<AesResponseDto>>
 {
     private readonly IDataResponseFactory _dataResponseFactory = null;
     private readonly IGetOrganizationByIdentifierValidationService _getOrganizationByIdentifierValidationService = null;
@@ -390,7 +390,7 @@ public interface IGetOrganizationByIdentifierDecryptService : IServiceHandlerAsy
 }
 
 [ScopedService(typeof(IGetOrganizationByIdentifierDecryptService))]
-public class GetOrganizationByIdentifierDecryptService : IGetOrganizationByIdentifierDecryptService
+public sealed class GetOrganizationByIdentifierDecryptService : IGetOrganizationByIdentifierDecryptService
 {
     private readonly IConfigHelper _configHelper = null;
 
@@ -448,7 +448,7 @@ public class GetOrganizationByIdentifierDecryptService : IGetOrganizationByIdent
 
 #region Query Integration Event Service Handler
 
-public class GetOrganizationByIdentifierQueryIntegrationEventServiceHandler : IRequestHandler<GetOrganizationByIdentifierIntegrationEventService, DataResponse<GetOrganizationByIdentifierResponseDto>>
+public sealed class GetOrganizationByIdentifierQueryIntegrationEventServiceHandler : IRequestHandler<GetOrganizationByIdentifierIntegrationEventService, DataResponse<GetOrganizationByIdentifierResponseDto>>
 {
     private readonly IMediator _mediator = null;
     private readonly IDataResponseFactory _dataResponseFactory = null;
