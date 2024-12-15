@@ -19,6 +19,7 @@
     <ProjectReference Include="..\Frameworks.Aspnetcore.Library\Frameworks.Aspnetcore.Library.csproj" />
     <ProjectReference Include="..\Models.Shared\Models.Shared.csproj" />
     <ProjectReference Include="..\Organization.Applications\Organization.Applications.csproj" />
+    <ProjectReference Include="..\User.Applications\User.Applications.csproj" />
     <ProjectReference Include="..\Utility.Shared\Utility.Shared.csproj" />
   </ItemGroup>
 

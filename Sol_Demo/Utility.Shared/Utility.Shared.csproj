@@ -1,9 +1,9 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net9.0</TargetFramework>
-    <ImplicitUsings>enable</ImplicitUsings>
-    <Nullable>enable</Nullable>
+	<TargetFramework>net9.0</TargetFramework>
+	<ImplicitUsings>enable</ImplicitUsings>
+	<Nullable>enable</Nullable>
   </PropertyGroup>
 	
 	<ItemGroup>
@@ -11,8 +11,8 @@
 	</ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Framework.Packages\Framework.Packages.csproj" />
-    <ProjectReference Include="..\Models.Shared\Models.Shared.csproj" />
+	<ProjectReference Include="..\Framework.Packages\Framework.Packages.csproj" />
+	<ProjectReference Include="..\Models.Shared\Models.Shared.csproj" />
   </ItemGroup>
 
 </Project>

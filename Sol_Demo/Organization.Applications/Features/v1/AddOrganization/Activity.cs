@@ -1,24 +1,4 @@
-﻿using FluentResults;
-using FluentValidation;
-using Hangfire;
-using Microsoft.Extensions.Logging;
-using Models.Shared.Constant;
-using Models.Shared.Enums;
-using Models.Shared.Requests;
-using NetTopologySuite.Utilities;
-using Newtonsoft.Json;
-using Organization.Applications.Shared.Cache;
-using Organization.Contracts.Features.AddOrganizations;
-using Organization.Infrastructures.Entities;
-using Organization.Infrastructures.Services.AddOrganization;
-using sorovi.DependencyInjection.AutoRegister;
-using System.Text.RegularExpressions;
-using Utility.Shared.AES;
-using Utility.Shared.Config;
-using Utility.Shared.Exceptions;
-using Utility.Shared.Response;
-using Utility.Shared.ServiceHandler;
-using Utility.Shared.Validations;
+﻿
 
 namespace Organization.Applications.Features.v1.AddOrganization;
 
@@ -301,6 +281,7 @@ public sealed class OrganizationCreatedDomainEventHandler : INotificationHandler
 
 #endregion Domain Event
 
+/*
 #region Add Organization Response Service
 
 public class AddOrganizationResponseServiceParameters
@@ -370,6 +351,7 @@ public sealed class AddOrganizationResponseService : IAddOrganizationResponseSer
 }
 
 #endregion Add Organization Response Service
+*/
 
 #region Command Handler
 
@@ -390,7 +372,6 @@ public sealed class AddOrganizationCommandHandler : IRequestHandler<AddOrganizat
     private readonly IAddOrgnizationValidationService _addOrgnizationValidationService;
     private readonly IAddOrganizationRequestEntityMapService _addOrganizationRequestEntityMapService;
     private readonly IAddOrganizationDbService _addOrganizationDbService;
-    private readonly IAddOrganizationResponseService _addOrganizationResponseService;
     private readonly IMediator _mediator;
 
     public AddOrganizationCommandHandler(
@@ -399,7 +380,6 @@ public sealed class AddOrganizationCommandHandler : IRequestHandler<AddOrganizat
         IAddOrgnizationValidationService orgnizationValidationService,
         IAddOrganizationRequestEntityMapService addOrganizationRequestEntityMapService,
         IAddOrganizationDbService addOrganizationDbService,
-        IAddOrganizationResponseService addOrganizationResponseService,
         IMediator mediator
         )
     {
@@ -408,7 +388,6 @@ public sealed class AddOrganizationCommandHandler : IRequestHandler<AddOrganizat
         _addOrgnizationValidationService = orgnizationValidationService;
         _addOrganizationRequestEntityMapService = addOrganizationRequestEntityMapService;
         _addOrganizationDbService = addOrganizationDbService;
-        _addOrganizationResponseService = addOrganizationResponseService;
         _mediator = mediator;
     }
 
@@ -454,11 +433,8 @@ public sealed class AddOrganizationCommandHandler : IRequestHandler<AddOrganizat
             _ = _mediator.Publish(new OrganizationCreatedDomainEvent(torganization.Identifier), cancellationToken);
 
             // Response
-            var responseResult = await _addOrganizationResponseService.HandleAsync(new AddOrganizationResponseServiceParameters(torganization));
-            if (responseResult.IsFailed)
-                return await _dataResponseFactory.ErrorAsync<AesResponseDto>(responseResult.Errors[0].Message, (int)HttpStatusCode.BadRequest);
-
-            return await _dataResponseFactory.SuccessAsync<AesResponseDto>((int)HttpStatusCode.Created, responseResult.Value, "Organization added successfully");
+           
+            return await _dataResponseFactory.SuccessAsync<AesResponseDto>((int)HttpStatusCode.Created, null, "Organization added successfully");
         }
         catch (Exception ex)
         {

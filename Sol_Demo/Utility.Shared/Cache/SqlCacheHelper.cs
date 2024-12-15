@@ -5,7 +5,7 @@ namespace Utility.Shared.Cache;
 
 public static class SqlCacheHelper
 {
-    public static Task SetCacheAsync<TValue>(IDistributedCache distributedCache, string cacheKey, double? cacheTime, TValue value)
+    public static Task SetCacheAsync<TValue>(IDistributedCache distributedCache, string cacheKey, double? cacheTime, TValue value,CancellationToken cancellationToken = default)
     {
         if (distributedCache == null)
             throw new ArgumentNullException(nameof(distributedCache));
@@ -25,10 +25,10 @@ public static class SqlCacheHelper
         };
 
         var jsonData = JsonConvert.SerializeObject(value);
-        return distributedCache.SetStringAsync(cacheKey, jsonData, cacheOptions);
+        return distributedCache.SetStringAsync(cacheKey, jsonData, cacheOptions,cancellationToken);
     }
 
-    public static Task<string?> GetCacheAsync(IDistributedCache distributedCache, string cacheKey)
+    public static Task<string?> GetCacheAsync(IDistributedCache distributedCache, string cacheKey, CancellationToken cancellationToken = default)
     {
         if (distributedCache == null)
             throw new ArgumentNullException(nameof(distributedCache));
@@ -36,10 +36,10 @@ public static class SqlCacheHelper
         if (cacheKey == null)
             throw new ArgumentNullException(nameof(cacheKey));
 
-        return distributedCache.GetStringAsync(cacheKey);
+        return distributedCache.GetStringAsync(cacheKey,cancellationToken);
     }
 
-    public static Task RemoveCacheAsync(IDistributedCache distributedCache, string cacheKey)
+    public static Task RemoveCacheAsync(IDistributedCache distributedCache, string cacheKey, CancellationToken cancellationToken = default)
     {
         if (distributedCache == null)
             throw new ArgumentNullException(nameof(distributedCache));
@@ -47,6 +47,6 @@ public static class SqlCacheHelper
         if (cacheKey == null)
             throw new ArgumentNullException(nameof(cacheKey));
 
-        return distributedCache.RemoveAsync(cacheKey);
+        return distributedCache.RemoveAsync(cacheKey,cancellationToken);
     }
 }

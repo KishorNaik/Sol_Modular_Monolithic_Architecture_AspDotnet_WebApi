@@ -70,11 +70,14 @@ public class OrganizationSharedCacheService : IOrganizationSharedCacheService
             if (@params is null)
                 return ResultExceptionFactory.Error($"{nameof(OrganizationSharedCacheServiceParameter)} object is null", HttpStatusCode.BadRequest);
 
+            if (@params.Identifier is null)
+                return ResultExceptionFactory.Error($"{nameof(@params.Identifier)} object is null", HttpStatusCode.BadRequest);
+
             Guid identifer = @params.Identifier ?? Guid.Empty;
 
             string cacheName = $"Organization-{identifer}";
 
-            string? cacheValue = await _distributedCache.GetStringAsync(cacheName)!;
+            string? cacheValue = await _distributedCache.GetStringAsync(cacheName,@params.CancellationToken)!;
 
             if (cacheValue is null)
             {

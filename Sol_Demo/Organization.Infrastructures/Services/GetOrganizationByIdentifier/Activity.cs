@@ -1,5 +1,6 @@
 ﻿using FluentResults;
 using Microsoft.EntityFrameworkCore;
+using Models.Shared.Enums;
 using Organization.Infrastructures.Context;
 using Organization.Infrastructures.Entities;
 using sorovi.DependencyInjection.AutoRegister;
@@ -49,7 +50,9 @@ public sealed class GetOrganizationByIdentifierDbService : IGetOrganizationByIde
             var organization = await _organizationDbContext
                 .Torganizations
                 .AsNoTracking()
-                .FirstOrDefaultAsync(x => x.Identifier == @params.Identifier, @params.CancellationToken);
+                .AsParallel()
+                .AsQueryable()
+                .FirstOrDefaultAsync(x => x.Identifier == @params.Identifier && x.Status==(Convert.ToBoolean((int)StatusEnum.Active)), @params.CancellationToken);
 
             if (organization is null)
                 return ResultExceptionFactory.Error<Torganization>("Organization not found", System.Net.HttpStatusCode.NotFound);

@@ -1,4 +1,5 @@
 ﻿using Organization.Applications;
+using User.Applications;
 
 namespace Host.Api.Extensions.Modules;
 
@@ -10,6 +11,7 @@ public static class ModulesRegistration
 
         hostApplicationBuilder
             .Services
-            .AddOrganizationModule(hostApplicationBuilder);
+            .AddOrganizationModule(hostApplicationBuilder)
+            .AddUserModule(hostApplicationBuilder);
     }
 }

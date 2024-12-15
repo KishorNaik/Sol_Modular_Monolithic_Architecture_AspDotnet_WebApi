@@ -16,15 +16,12 @@ namespace Users.Infrastructures.Services.AddUsers;
 
 public class AddUserDbServiceSqlParameters
 {
-    public UsersDbContext? UserContext { get;}
-
     public CancellationToken CancellationToken { get;}
 
     public Tuser? User { get; }
 
-    public AddUserDbServiceSqlParameters(UsersDbContext? userContext, CancellationToken cancellationToken, Tuser? user)
+    public AddUserDbServiceSqlParameters(Tuser? user, CancellationToken cancellationToken)
     {
-        UserContext = userContext;
         CancellationToken = cancellationToken;
         User = user;
     }
@@ -39,15 +36,19 @@ public interface IAddUserDbService : IServiceHandlerAsync<AddUserDbServiceSqlPar
 [ScopedService(typeof(IAddUserDbService))]
 public sealed class AddUserDbService : IAddUserDbService
 {
+    private readonly UsersDbContext _userContext;
 
+    public AddUserDbService(UsersDbContext userContext)
+    {
+        _userContext = userContext;
+    }
    
     async Task<Result<Tuser>> IServiceHandlerAsync<AddUserDbServiceSqlParameters, Tuser>.HandleAsync(AddUserDbServiceSqlParameters @params)
     {
         try
         { 
-
-            if(@params.UserContext is null)
-                return ResultExceptionFactory.Error<Tuser>($"{nameof(UsersDbContext)} is null", httpStatusCode: HttpStatusCode.BadRequest);
+            if(@params is null)
+                return ResultExceptionFactory.Error<Tuser>($"{nameof(AddUserDbServiceSqlParameters)} is null", httpStatusCode: HttpStatusCode.BadRequest);
 
             if(@params.User is null)
                 return ResultExceptionFactory.Error<Tuser>($"{nameof(Tuser)} is null", httpStatusCode: HttpStatusCode.BadRequest);
@@ -55,8 +56,8 @@ public sealed class AddUserDbService : IAddUserDbService
             Tuser tuser = @params.User;
 
             // Add Users
-            await @params.UserContext.Tusers.AddAsync(tuser, @params.CancellationToken);
-            await @params.UserContext.SaveChangesAsync(@params.CancellationToken);
+            await _userContext.Tusers.AddAsync(tuser, @params.CancellationToken);
+            await _userContext.SaveChangesAsync(@params.CancellationToken);
 
             return Result.Ok(tuser);
         }
@@ -72,7 +73,7 @@ public sealed class AddUserDbService : IAddUserDbService
 }
 
 #endregion
-
+/*
 #region Add User Communication Db Service
 public class AddUserCommunicationSqlParameters
 {
@@ -114,7 +115,11 @@ public sealed class AddUserCommunicationDbService : IAddUserCommunicationDbServi
             await @params.UsersDbContext.AddAsync(tuserCommunication, @params.CancellationToken);
             int result=await @params.UsersDbContext.SaveChangesAsync(@params.CancellationToken);
 
-            return Result.Ok(result > 0 ? true : false);
+            if(result<=0)
+                return ResultExceptionFactory.Error<bool>("User Communication not added", httpStatusCode: HttpStatusCode.Conflict);
+            
+
+            return Result.Ok(true);
         }
         catch (Exception ex) when (ex.InnerException is SqlException sqlEx && (sqlEx.Number == 2601 || sqlEx.Number == 2627))
         {
@@ -169,7 +174,11 @@ public sealed class AddUserCredentialsDbService : IAddUserCredentialsDbService
             await @params.UsersDbContext.AddAsync(userCredentials, @params.CancellationToken);
             int result = await @params.UsersDbContext.SaveChangesAsync(@params.CancellationToken);
 
-            return Result.Ok(result > 0 ? true : false);
+            if (result <= 0)
+                return ResultExceptionFactory.Error<bool>("User Credentials not added", httpStatusCode: HttpStatusCode.Conflict);
+
+
+            return Result.Ok(true);
         }
         catch (Exception ex) when (ex.InnerException is SqlException sqlEx && (sqlEx.Number == 2601 || sqlEx.Number == 2627))
         {
@@ -222,7 +231,11 @@ public sealed class AddUserTokenDbService : IAddUserTokenDbService
             await @params.UsersDbContext.AddAsync(userToken, @params.CancellationToken);
             int result = await @params.UsersDbContext.SaveChangesAsync(@params.CancellationToken);
 
-            return Result.Ok(result > 0 ? true : false);
+            if (result <= 0)
+                return ResultExceptionFactory.Error<bool>("User Token not added", httpStatusCode: HttpStatusCode.Conflict);
+
+
+            return Result.Ok(true);
         }
         catch (Exception ex) when (ex.InnerException is SqlException sqlEx && (sqlEx.Number == 2601 || sqlEx.Number == 2627))
         {
@@ -277,7 +290,11 @@ public sealed class AddUserSettingsDbService : IAddUserSettingsDbService
             await @params.UsersDbContext.AddAsync(userSetting, @params.CancellationToken);
             int result = await @params.UsersDbContext.SaveChangesAsync(@params.CancellationToken);
 
-            return Result.Ok(result > 0 ? true : false);
+            if (result <= 0)
+                return ResultExceptionFactory.Error<bool>("User Settings not added", httpStatusCode: HttpStatusCode.Conflict);
+
+
+            return Result.Ok(true);
         }
         catch (Exception ex) when (ex.InnerException is SqlException sqlEx && (sqlEx.Number == 2601 || sqlEx.Number == 2627))
         {
@@ -331,7 +348,11 @@ public sealed class AddUserOrganizationDbService : IAddUserOrganizationDbService
             await @params.UsersDbContext.AddAsync(tusersOrganization, @params.CancellationToken);
             int result = await @params.UsersDbContext.SaveChangesAsync(@params.CancellationToken);
 
-            return Result.Ok(result > 0 ? true : false);
+            if (result <= 0)
+                return ResultExceptionFactory.Error<bool>("User Organization not added", httpStatusCode: HttpStatusCode.Conflict);
+
+
+            return Result.Ok(true);
         }
         catch (Exception ex) when (ex.InnerException is SqlException sqlEx && (sqlEx.Number == 2601 || sqlEx.Number == 2627))
         {
@@ -344,3 +365,5 @@ public sealed class AddUserOrganizationDbService : IAddUserOrganizationDbService
     }
 }
 #endregion 
+
+*/

@@ -1,5 +1,6 @@
 ﻿using FluentResults;
 using Microsoft.EntityFrameworkCore;
+using Models.Shared.Enums;
 using Organization.Infrastructures.Context;
 using sorovi.DependencyInjection.AutoRegister;
 using System.Text;
@@ -48,7 +49,10 @@ public sealed class GetOrganizationVersionByIdentiferDbService : IGetOrganizatio
             var versionResult = (await _organizationDbContext
                 .Torganizations
                 .AsNoTracking()
-                .FirstOrDefaultAsync(x => x.Identifier == @params.Identifier, @params.CancellationToken))?.Version;
+                .AsParallel()
+                .AsQueryable()
+                .FirstOrDefaultAsync(x => x.Identifier == @params.Identifier && x.Status==Convert.ToBoolean((int)StatusEnum.Active), @params.CancellationToken))
+                ?.Version;
 
             if (versionResult is null)
                 return ResultExceptionFactory.Error<byte[]>($"{nameof(@params.Identifier)}", System.Net.HttpStatusCode.NotFound);
