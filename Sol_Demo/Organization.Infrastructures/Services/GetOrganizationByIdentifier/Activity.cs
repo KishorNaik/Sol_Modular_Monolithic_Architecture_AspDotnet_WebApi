@@ -50,7 +50,6 @@ public sealed class GetOrganizationByIdentifierDbService : IGetOrganizationByIde
             var organization = await _organizationDbContext
                 .Torganizations
                 .AsNoTracking()
-                .AsParallel()
                 .AsQueryable()
                 .FirstOrDefaultAsync(x => x.Identifier == @params.Identifier && x.Status==(Convert.ToBoolean((int)StatusEnum.Active)), @params.CancellationToken);
 

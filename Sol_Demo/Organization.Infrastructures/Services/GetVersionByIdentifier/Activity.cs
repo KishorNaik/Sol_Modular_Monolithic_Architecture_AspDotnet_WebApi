@@ -49,7 +49,6 @@ public sealed class GetOrganizationVersionByIdentiferDbService : IGetOrganizatio
             var versionResult = (await _organizationDbContext
                 .Torganizations
                 .AsNoTracking()
-                .AsParallel()
                 .AsQueryable()
                 .FirstOrDefaultAsync(x => x.Identifier == @params.Identifier && x.Status==Convert.ToBoolean((int)StatusEnum.Active), @params.CancellationToken))
                 ?.Version;

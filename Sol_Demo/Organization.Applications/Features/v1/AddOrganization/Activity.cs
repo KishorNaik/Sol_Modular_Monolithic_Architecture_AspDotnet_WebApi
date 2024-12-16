@@ -137,11 +137,11 @@ public sealed class AddOrganizationDecrypteService : IAddOrganizationDecrypteSer
                 return ResultExceptionFactory.Error<AddOrganizationRequestDto>("Aes Secret Key not found", HttpStatusCode.NotFound);
 
             // Decrypt Request
-            IAesDecrypteWrapper<AesRequestDto, AddOrganizationRequestDto> aesDecrypteWrapper =
-                new AesDecrypteWrapper<AesRequestDto, AddOrganizationRequestDto>();
+            IAesDecrypteWrapper<AddOrganizationRequestDto> aesDecrypteWrapper =
+                new AesDecrypteWrapper<AddOrganizationRequestDto>();
 
-            AesDecrypteWrapperParameter<AesRequestDto> aesDecrypteWrapperParameter =
-                new AesDecrypteWrapperParameter<AesRequestDto>(aesRequestDto, aesSecret.Value);
+            AesDecrypteWrapperParameter aesDecrypteWrapperParameter =
+                new AesDecrypteWrapperParameter(aesRequestDto.Body!, aesSecret.Value);
 
             var aesDecryptionResult = await aesDecrypteWrapper.HandleAsync(aesDecrypteWrapperParameter);
             if (aesDecryptionResult.IsFailed)
@@ -258,7 +258,10 @@ public sealed class OrganizationCreatedDomainEventHandler : INotificationHandler
             new OrganizationSharedCacheServiceParameter(notification.Identifier, cancellationToken));
 
         if (result.IsFailed)
+        {
             _logger.LogError(result.Errors[0].Message);
+            return;
+        }
 
         _logger.LogInformation($"AddOrganizationDomainEventHandler Cache updated: {result.Value.IsCached}");
     }

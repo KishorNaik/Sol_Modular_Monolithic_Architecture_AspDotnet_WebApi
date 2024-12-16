@@ -50,7 +50,6 @@ public sealed class GetUserVersionByIdentifierDbService : IGetUserVersionByIdent
             var result = (await _usersDbContext
                 .Tusers
                 .AsNoTracking()
-                .AsParallel()
                 .AsQueryable()
                 .FirstOrDefaultAsync(x => x.Identifier == @params.Identifier, @params.CancellationToken)
                 )?.Version;

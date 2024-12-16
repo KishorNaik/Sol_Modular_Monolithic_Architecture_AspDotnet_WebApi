@@ -12,24 +12,24 @@ using Utility.Shared.Validations;
 
 namespace Utility.Shared.AES;
 
-public class AesDecrypteWrapperParameter<TParams>
+public class AesDecrypteWrapperParameter
 {
-    public TParams? Params { get; }
+    public string? Data { get; }
 
     public string? Secret { get; }
 
-    public AesDecrypteWrapperParameter(TParams @params, string? secret)
+    public AesDecrypteWrapperParameter(string data, string? secret)
     {
-        Params = @params;
+        Data = data;
         Secret = secret;
     }
 }
 
-public interface IAesDecrypteWrapper<TParams, TResult> : IServiceHandlerAsync<AesDecrypteWrapperParameter<TParams>, TResult>
+public interface IAesDecrypteWrapper<TResult> : IServiceHandlerAsync<AesDecrypteWrapperParameter, TResult>
 {
 }
 
-public class AesDecrypteWrapper<TParams, TResult> : IAesDecrypteWrapper<TParams, TResult>
+public class AesDecrypteWrapper<TResult> : IAesDecrypteWrapper<TResult>
 {
     //public async Task<Result<TRequestDto>> HandleAsync(AesDecrypteWrapperParameter @params)
     //{
@@ -65,14 +65,14 @@ public class AesDecrypteWrapper<TParams, TResult> : IAesDecrypteWrapper<TParams,
     //        return ResultExceptionFactory.Error<TRequestDto>(ex.Message, HttpStatusCode.InternalServerError);
     //    }
     //}
-    async Task<Result<TResult>> IServiceHandlerAsync<AesDecrypteWrapperParameter<TParams>, TResult>.HandleAsync(AesDecrypteWrapperParameter<TParams> @params)
+    async Task<Result<TResult>> IServiceHandlerAsync<AesDecrypteWrapperParameter, TResult>.HandleAsync(AesDecrypteWrapperParameter @params)
     {
         try
         {
             if (@params is null)
                 return ResultExceptionFactory.Error<TResult>("AesDecrypteWrapperParameter is null", HttpStatusCode.BadRequest);
 
-            if (@params.Params is null)
+            if (@params.Data is null)
                 return ResultExceptionFactory.Error<TResult>("Params is null", HttpStatusCode.BadRequest);
 
             if (@params.Secret is null)
@@ -80,8 +80,8 @@ public class AesDecrypteWrapper<TParams, TResult> : IAesDecrypteWrapper<TParams,
 
             AesHelper aesHelper = new AesHelper(@params.Secret!);
 
-            String requestBody = JsonConvert.SerializeObject(@params.Params as object);
-
+            String requestBody = @params.Data;
+            
             if (requestBody is null)
                 return ResultExceptionFactory.Error<TResult>("RequestBody is null", HttpStatusCode.BadRequest);
 

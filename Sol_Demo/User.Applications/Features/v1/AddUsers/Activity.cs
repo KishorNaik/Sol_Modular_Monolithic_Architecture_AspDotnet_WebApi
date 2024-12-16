@@ -14,6 +14,9 @@ using Utility.Shared.RandomString;
 namespace User.Applications.Features.v1.AddUsers;
 
 #region Controller Endpoint
+[ApiVersion(1)]
+[Route("api/v{version:apiVersion}/users")]
+[Tags("Users")]
 public class AddUserController : UserBaseController
 {
     public AddUserController(IMediator mediator) : base(mediator)
@@ -28,7 +31,8 @@ public class AddUserController : UserBaseController
     [ProducesResponseType<DataResponse<AesResponseDto>>((int)HttpStatusCode.BadRequest)]
     public async Task<IActionResult> CreateAsync([FromBody] AesRequestDto request, CancellationToken cancellationToken = default)
     {
-        return base.StatusCode(Convert.ToInt32(200),new { });
+        var response = await base.Mediator.Send(new AddUserCommand(request));
+        return base.StatusCode(Convert.ToInt32(response.StatusCode),response);
     }
 
 }
@@ -204,11 +208,11 @@ public sealed class AddUserDecryptService : IAddUserDecryptService
                 return ResultExceptionFactory.Error<AddUserRequestDto>("Aes Secret Key not found", HttpStatusCode.NotFound);
 
             // Decrypt Request
-            IAesDecrypteWrapper<AesRequestDto, AddUserRequestDto> aesDecrypteWrapper =
-                new AesDecrypteWrapper<AesRequestDto, AddUserRequestDto>();
+            IAesDecrypteWrapper<AddUserRequestDto> aesDecrypteWrapper =
+                new AesDecrypteWrapper<AddUserRequestDto>();
 
-            AesDecrypteWrapperParameter<AesRequestDto> aesDecrypteWrapperParameter =
-                new AesDecrypteWrapperParameter<AesRequestDto>(aesRequestDto, aesSecret.Value);
+            AesDecrypteWrapperParameter aesDecrypteWrapperParameter =
+                new AesDecrypteWrapperParameter(aesRequestDto.Body!, aesSecret.Value);
 
             var aesDecryptionResult = await aesDecrypteWrapper.HandleAsync(aesDecrypteWrapperParameter);
             if (aesDecryptionResult.IsFailed)
@@ -287,9 +291,10 @@ public sealed class AddUserRequestEntityMapService : IAddUserRequestEntityMapSer
                 tuser.UserType = Convert.ToInt32(UserTypeEnum.User);
                 
                 tuser.TuserCommunication = new TuserCommunication();
+                tuser.TuserCommunication.UserId = tuser.Identifier;
                 tuser.TuserCommunication.EmailId=addUserRequestDto.Email;
                 tuser.TuserCommunication.MobileNumber=addUserRequestDto.Mobile;
-                tuser.TuserCommunication.UserId=tuser.Identifier;
+               
 
                 tuser.TuserCredential = new TuserCredential();
                 tuser.TuserCredential.UserId=tuser.Identifier;
@@ -328,11 +333,15 @@ public sealed class AddUserRequestEntityMapService : IAddUserRequestEntityMapSer
 #region Domain Event Service
 public class UserCreatedDomainEvent : INotification
 {
-    public Guid Identifier { get; }
+    
+    public Guid? Identifier { get; }
 
-    public UserCreatedDomainEvent(Guid identifier)
+    public StatusEnum Status { get; }
+
+    public UserCreatedDomainEvent(Guid identifier, StatusEnum status)
     {
         Identifier = identifier;
+        Status = status;
     }
 }
 
@@ -350,10 +359,14 @@ public sealed class UserCreatedDomainEventHandler : INotificationHandler<UserCre
 
     public async Task HandleCacheAsync(UserCreatedDomainEvent notification,CancellationToken cancellationToken)
     {
-        var result=await _userSharedCacheService.HandleAsync(new UserSharedCacheServiceParameters(notification.Identifier,cancellationToken));
+        var result=await _userSharedCacheService.HandleAsync(
+            new UserSharedCacheServiceParameters(notification.Identifier,(StatusEnum)Convert.ToInt32(notification?.Status),cancellationToken));
 
         if (result.IsFailed)
+        {
             _logger.LogError(result.Errors[0].Message);
+            return;
+        }
 
         _logger.LogInformation($"UserCreatedDomainEventHandler Cache updated: {result.Value.IsCached}");
 
@@ -475,7 +488,7 @@ public sealed class AddUserCommandHandler : IRequestHandler<AddUserCommand, Data
                 return await _dataResponseFactory.ErrorAsync<AesResponseDto>(addUserResult.Errors[0].Message, (int)addUserResult.Errors[0].Metadata[ConstantValue.StatusCode]);
 
             // Publish Domain Event
-            _=_mediator.Publish(new UserCreatedDomainEvent(tuser.Identifier), cancellationToken);
+            _=_mediator.Publish(new UserCreatedDomainEvent(tuser.Identifier,(StatusEnum)Convert.ToInt32(tuser.Status)), cancellationToken);
 
             // Response
             return await _dataResponseFactory.SuccessAsync<AesResponseDto>((int)HttpStatusCode.Created,null,"User Added Successfully");

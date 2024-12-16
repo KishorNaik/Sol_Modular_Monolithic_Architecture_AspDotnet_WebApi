@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.Caching.Distributed;
 using Models.Shared.Constant;
+using Models.Shared.Enums;
 using Newtonsoft.Json;
 using Users.Infrastructures.Services.GetUsersByIdentifier;
 using Users.Infrastructures.Services.GetVersionByIdentifer;
@@ -11,11 +12,14 @@ public class UserSharedCacheServiceParameters
 {
     public Guid? Identifier { get; }
 
+    public StatusEnum Status { get; }
+
     public CancellationToken CancellationToken { get; }
 
-    public UserSharedCacheServiceParameters(Guid? identifier, CancellationToken cancellationToken)
+    public UserSharedCacheServiceParameters(Guid? identifier, StatusEnum status, CancellationToken cancellationToken)
     {
         Identifier = identifier;
+        Status = status;
         CancellationToken = cancellationToken;
     }
 }
@@ -77,13 +81,18 @@ public class UserSharedCacheService : IUserSharedCacheService
             if (cacheValue is null)
             {
                 // Get User Data
-                var userResult = await _getUserByIdentiferDbService.HandleAsync(new GetUserByIdentiferDbServiceSqlParameters(identifier, @params.CancellationToken));
+                var userResult = await _getUserByIdentiferDbService.HandleAsync(new GetUserByIdentiferDbServiceSqlParameters(identifier,@params.Status, @params.CancellationToken));
                 if (userResult.IsFailed)
                     return ResultExceptionFactory.Error(userResult.Errors[0]);
 
                 // Set Cache
                 getUserByIdentiferDbServiceResult = userResult.Value;
                 await SqlCacheHelper.SetCacheAsync(_distributedCache, cacheName, ConstantValue.CacheTime, getUserByIdentiferDbServiceResult);
+
+                // Set Cache for Client
+                string cacheClientName = $"UserClient-{getUserByIdentiferDbServiceResult!.UserCredentials!.ClientId!}";
+                await SqlCacheHelper.SetCacheAsync(_distributedCache, cacheClientName, ConstantValue.CacheTime, getUserByIdentiferDbServiceResult);
+
                 isCached = true;
             }
             else
@@ -105,12 +114,16 @@ public class UserSharedCacheService : IUserSharedCacheService
                 if (!cacheValueResult.Version!.SequenceEqual(versionResult.Value))
                 {
                     // Get User Data
-                    var userResult = await _getUserByIdentiferDbService.HandleAsync(new GetUserByIdentiferDbServiceSqlParameters(cacheValueResult.Identifier, @params.CancellationToken));
+                    var userResult = await _getUserByIdentiferDbService.HandleAsync(new GetUserByIdentiferDbServiceSqlParameters(cacheValueResult.Identifier,cacheValueResult?.User?.Status, @params.CancellationToken));
                     if (userResult.IsFailed)
                         return ResultExceptionFactory.Error(userResult.Errors[0]);
 
                     getUserByIdentiferDbServiceResult = userResult.Value;
                     await SqlCacheHelper.SetCacheAsync(_distributedCache, cacheName, ConstantValue.CacheTime, getUserByIdentiferDbServiceResult);
+
+                    // Set Cache for Client
+                    string cacheClientName = $"UserClient-{getUserByIdentiferDbServiceResult!.UserCredentials!.ClientId!}";
+                    await SqlCacheHelper.SetCacheAsync(_distributedCache, cacheClientName, ConstantValue.CacheTime, getUserByIdentiferDbServiceResult);
                     isCached = true;
                 }
                 else

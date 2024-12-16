@@ -16,11 +16,14 @@ public class GetUserByIdentiferDbServiceSqlParameters
 {
     public Guid? Identifer { get; }
 
+    public StatusEnum? Status { get; }
+
     public CancellationToken CancellationToken { get; }
 
-    public GetUserByIdentiferDbServiceSqlParameters(Guid? identifer, CancellationToken cancellationToken)
+    public GetUserByIdentiferDbServiceSqlParameters(Guid? identifer, StatusEnum? status, CancellationToken cancellationToken)
     {
         Identifer = identifer;
+        Status = status;
         CancellationToken = cancellationToken;
     }
 }
@@ -128,9 +131,8 @@ public sealed class GetUserByIdentiferDbService : IGetUserByIdentiferDbService
             var result = await _usersDbContext
                 .Tusers
                 .AsNoTracking()
-                .AsParallel()
                 .AsQueryable()
-                .Where(x => x.Identifier == @params.Identifer && x.Status == Convert.ToBoolean((int)StatusEnum.Active))
+                .Where(x => x.Identifier == @params.Identifer && x.Status == Convert.ToBoolean((int)@params.Status!))
                 .Select(x => new GetUserByIdentiferDbServiceResult()
                 {
                     Identifier = x.Identifier,

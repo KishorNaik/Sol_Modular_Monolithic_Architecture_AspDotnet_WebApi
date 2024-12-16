@@ -78,7 +78,7 @@ public sealed class GetOrganizationByIdentifierValidator : AbstractValidator<Get
         RuleFor(x => x.Identifier)
              .Must((context, id, propertyValidatorContext) =>
              {
-                 var identifer = (string)actionContextAccessor.ActionContext.RouteData.Values.GetValueOrDefault("identifier");
+                 var identifer = (string)actionContextAccessor.ActionContext.RouteData.Values.GetValueOrDefault("identifier") ?? id?.ToString();
 
                  if (identifer is null)
                  {
@@ -91,7 +91,7 @@ public sealed class GetOrganizationByIdentifierValidator : AbstractValidator<Get
              .WithErrorCode("Identifier")
              .Must((context, id, propertyValidatorContext) =>
              {
-                 var identifer = (string)actionContextAccessor.ActionContext.RouteData.Values.GetValueOrDefault("identifier");
+                 var identifer = (string)actionContextAccessor.ActionContext.RouteData.Values.GetValueOrDefault("identifier") ?? id?.ToString();
 
                  Guid identifierGuid;
                  var flag = Guid.TryParse(identifer, out identifierGuid);
@@ -143,70 +143,6 @@ public sealed class GetOrganizationByIdentifierValidationService : IGetOrganizat
 
 #endregion Validation Service
 
-#region Entity Map Service
-
-public class GetOrganizationByIdentiferEntityMapServiceParameter
-{
-    public GetOrganizationByIdentifierRequestDto? Request { get; }
-
-    public CancellationToken CancellationToken { get; }
-
-    public GetOrganizationByIdentiferEntityMapServiceParameter(GetOrganizationByIdentifierRequestDto? request, CancellationToken cancellationToken)
-    {
-        Request = request;
-        CancellationToken = cancellationToken;
-    }
-}
-
-public class GetOrganizationByIdentifierMapServiceResult
-{
-    public Torganization? Torganization { get; }
-
-    public GetOrganizationByIdentifierMapServiceResult(Torganization? torganization)
-    {
-        Torganization = torganization;
-    }
-}
-
-public interface IGetOrganizationByIdentiferEntityMapService : IServiceHandlerAsync<GetOrganizationByIdentiferEntityMapServiceParameter, GetOrganizationByIdentifierMapServiceResult>
-{
-}
-
-[ScopedService(typeof(IGetOrganizationByIdentiferEntityMapService))]
-public sealed class GetOrganizationByIdentiferEntityMapService : IGetOrganizationByIdentiferEntityMapService
-{
-    Task<Result<GetOrganizationByIdentifierMapServiceResult>> IServiceHandlerAsync<GetOrganizationByIdentiferEntityMapServiceParameter, GetOrganizationByIdentifierMapServiceResult>.HandleAsync(GetOrganizationByIdentiferEntityMapServiceParameter @params)
-    {
-        return Task.Run<Result<GetOrganizationByIdentifierMapServiceResult>>(() =>
-        {
-            try
-            {
-                if (@params is null)
-                    return ResultExceptionFactory.Error($"{nameof(GetOrganizationByIdentifierRequestDto)} object is null", HttpStatusCode.BadRequest);
-
-                if (@params.Request is null)
-                    return ResultExceptionFactory.Error($"{nameof(GetOrganizationByIdentifierRequestDto)} object is null", HttpStatusCode.BadRequest);
-
-                GetOrganizationByIdentifierRequestDto request = @params.Request;
-
-                Torganization torganization = new Torganization
-                {
-                    Identifier = (Guid)(object)request.Identifier!
-                };
-
-                GetOrganizationByIdentifierMapServiceResult getOrganizationByIdentifierMapServiceResult = new GetOrganizationByIdentifierMapServiceResult(torganization);
-
-                return Result.Ok(getOrganizationByIdentifierMapServiceResult);
-            }
-            catch (Exception ex)
-            {
-                return ResultExceptionFactory.Error(ex.Message, HttpStatusCode.InternalServerError);
-            }
-        }, @params.CancellationToken);
-    }
-}
-
-#endregion Entity Map Service
 
 #region Response Service
 
@@ -298,21 +234,18 @@ public sealed class GetOrganizationByIdentifierQueryHandler : IRequestHandler<Ge
 {
     private readonly IDataResponseFactory _dataResponseFactory = null;
     private readonly IGetOrganizationByIdentifierValidationService _getOrganizationByIdentifierValidationService = null;
-    private readonly IGetOrganizationByIdentiferEntityMapService _getOrganizationByIdentiferEntityMapService = null;
     private readonly IOrganizationSharedCacheService _organizationSharedCacheService = null;
     private readonly IGetOrganizationByIdentifierResponseService _getOrganizationByIdentifierResponseService = null;
 
     public GetOrganizationByIdentifierQueryHandler(
         IDataResponseFactory dataResponseFactory,
         IGetOrganizationByIdentifierValidationService getOrganizationByIdentifierValidationService,
-        IGetOrganizationByIdentiferEntityMapService getOrganizationByIdentiferEntityMapService,
         IOrganizationSharedCacheService organizationSharedCacheService,
         IGetOrganizationByIdentifierResponseService getOrganizationByIdentifierResponseService
         )
     {
         _dataResponseFactory = dataResponseFactory;
         _getOrganizationByIdentifierValidationService = getOrganizationByIdentifierValidationService;
-        _getOrganizationByIdentiferEntityMapService = getOrganizationByIdentiferEntityMapService;
         _organizationSharedCacheService = organizationSharedCacheService;
         _getOrganizationByIdentifierResponseService = getOrganizationByIdentifierResponseService;
     }
@@ -331,21 +264,14 @@ public sealed class GetOrganizationByIdentifierQueryHandler : IRequestHandler<Ge
             if (validationResult.IsFailed)
                 return await _dataResponseFactory.ErrorAsync<AesResponseDto>(validationResult.Errors[0].Message, (int)HttpStatusCode.BadRequest);
 
-            // Map Entity
-            var mapEntityResult = await _getOrganizationByIdentiferEntityMapService
-                .HandleAsync(new GetOrganizationByIdentiferEntityMapServiceParameter(requestDto, cancellationToken));
-            if (mapEntityResult.IsFailed)
-                return await _dataResponseFactory.ErrorAsync<AesResponseDto>(mapEntityResult.Errors[0].Message, (int)mapEntityResult.Errors[0].Metadata[ConstantValue.StatusCode]);
-
-            GetOrganizationByIdentifierMapServiceResult getOrganizationByIdentifierMapServiceResult = mapEntityResult.Value!;
-            Torganization torganization = getOrganizationByIdentifierMapServiceResult.Torganization!;
+            Guid? identifer = request.Request.Identifier;
 
             // Get Data
-            var getDataResult = await _organizationSharedCacheService.HandleAsync(new OrganizationSharedCacheServiceParameter(torganization.Identifier, cancellationToken));
+            var getDataResult = await _organizationSharedCacheService.HandleAsync(new OrganizationSharedCacheServiceParameter(identifer, cancellationToken));
             if (getDataResult.IsFailed)
                 return await _dataResponseFactory.ErrorAsync<AesResponseDto>(getDataResult.Errors[0].Message, (int)getDataResult.Errors[0].Metadata[ConstantValue.StatusCode]);
 
-            torganization = getDataResult.Value.Torganization!;
+            Torganization torganization = getDataResult.Value.Torganization!;
 
             // Response
             var responseResult = await _getOrganizationByIdentifierResponseService.HandleAsync(new GetOrganizationByIdentifierResponseServiceParameter(torganization));
@@ -419,11 +345,11 @@ public sealed class GetOrganizationByIdentifierDecryptService : IGetOrganization
             var aesSecretValue = aesSecret.Value!;
 
             // Decrypt Response
-            IAesDecrypteWrapper<AesResponseDto, GetOrganizationByIdentifierResponseDto> aesDecrypteWrapper =
-                new AesDecrypteWrapper<AesResponseDto, GetOrganizationByIdentifierResponseDto>();
+            IAesDecrypteWrapper<GetOrganizationByIdentifierResponseDto> aesDecrypteWrapper =
+                new AesDecrypteWrapper<GetOrganizationByIdentifierResponseDto>();
 
-            AesDecrypteWrapperParameter<AesResponseDto> aesDecrypteWrapperParameter =
-                new AesDecrypteWrapperParameter<AesResponseDto>(response, aesSecret.Value);
+            AesDecrypteWrapperParameter aesDecrypteWrapperParameter =
+                new AesDecrypteWrapperParameter(response.Body!, aesSecret.Value);
 
             var aesDecryptionResult = await aesDecrypteWrapper.HandleAsync(aesDecrypteWrapperParameter);
             if (aesDecryptionResult.IsFailed)

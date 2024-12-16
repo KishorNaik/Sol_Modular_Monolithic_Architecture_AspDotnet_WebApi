@@ -10,7 +10,13 @@ AesHelper aesHelper = new AesHelper(secretKey: secretKey);
 
 var request = new
 {
-    Name = "Shree Krishna Ltd",
+    FirstName = "John",
+    LastName = "Doe",
+    Email = "jhon@example.com",
+    Password="123456789",
+    Mobile = "1234567890",
+    OrgId= "9922f65e-a7a5-4b9f-b064-b147a70454d9"
+
 };
 
 var json = JsonConvert.SerializeObject(request);
