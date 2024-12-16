@@ -3,8 +3,8 @@ using Models.Shared.Constant;
 using Models.Shared.Enums;
 using User.Applications.Shared.BaseController;
 using User.Applications.Shared.Cache;
-using User.Applications.Shared.Events.HmacSignature;
 using User.Contracts.Features.GetUserByIdentifer;
+using User.Shared.Services.HmacSignature;
 using Users.Infrastructures.Services.GetUsersByIdentifier;
 
 namespace User.Applications.Features.v1.GetUserByIdentifer;
@@ -17,11 +17,9 @@ namespace User.Applications.Features.v1.GetUserByIdentifer;
 [Tags("Users")]
 public class GetUserByIdentifierController : UserBaseController
 {
-    private IServiceProvider _serviceProvider;
 
-    public GetUserByIdentifierController(IMediator mediator, IServiceProvider serviceProvider) : base(mediator)
+    public GetUserByIdentifierController(IMediator mediator) : base(mediator)
     {
-        _serviceProvider = serviceProvider;
     }
 
     [HttpGet("{identifier}")]

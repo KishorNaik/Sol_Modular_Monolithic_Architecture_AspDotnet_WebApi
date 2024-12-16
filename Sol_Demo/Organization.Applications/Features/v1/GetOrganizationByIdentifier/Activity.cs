@@ -15,6 +15,7 @@ using Organization.Infrastructures.Entities;
 using Organization.Infrastructures.Services.GetOrganizationByIdentifer;
 using Organization.Infrastructures.Services.GetVersionByIdentifier;
 using System.Reflection.Metadata.Ecma335;
+using User.Shared.Services.HmacSignature;
 using Utility.Shared.AES;
 using Utility.Shared.Cache;
 using Utility.Shared.Config;
@@ -44,6 +45,7 @@ public class GetOrganizationByIdentifierController : OrganizationBaseController
     [MapToApiVersion(1)]
     [DisableRateLimiting]
     [AllowAnonymous]
+    [HmacSignatureValidationService]
     [ProducesResponseType<DataResponse<AesResponseDto>>((int)HttpStatusCode.OK)]
     [ProducesResponseType<DataResponse<AesResponseDto>>((int)HttpStatusCode.BadRequest)]
     [ProducesResponseType<DataResponse<AesResponseDto>>((int)HttpStatusCode.NotFound)]

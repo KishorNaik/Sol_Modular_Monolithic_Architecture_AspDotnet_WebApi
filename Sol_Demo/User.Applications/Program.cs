@@ -35,7 +35,11 @@ public static class Program
         //services.AutoRegisterDependencies();
         services.RegisterServices((config) =>
         {
-            config.WithAssemblies(typeof(Program).Assembly, typeof(Users.Infrastructures.Program).Assembly);
+            config.WithAssemblies(
+                typeof(Program).Assembly, 
+                typeof(Users.Infrastructures.Program).Assembly,
+                typeof(User.Shared.Program).Assembly
+                );
             return config;
         });
 

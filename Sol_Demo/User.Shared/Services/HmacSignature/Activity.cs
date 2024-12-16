@@ -8,7 +8,6 @@ using Newtonsoft.Json;
 using System.Net;
 using System.Security.Cryptography;
 using System.Text;
-using User.Contracts.Shared.Events.HmacSignature;
 using Users.Infrastructures.Services.GetUsersByIdentifier;
 using Utility.Shared.Exceptions;
 using Microsoft.AspNetCore.Http;
@@ -18,36 +17,43 @@ using Microsoft.Extensions.Options;
 using Models.Shared.Responses;
 using System.Diagnostics;
 using System.Text.Json;
+using User.Contracts.Shared.Service.HmacSignature;
+using Utility.Shared.ServiceHandler;
+using Azure.Core;
+using System.Threading;
+using sorovi.DependencyInjection.AutoRegister;
 
-namespace User.Applications.Shared.Events.HmacSignature;
+namespace User.Shared.Services.HmacSignature;
 
-#region Event Integration Service
+#region Service
 
 
-public class GetHmacSecretKeyServiceHandler : IRequestHandler<GetHmacSecretKeyIntegrationEventService, Result<string>>
+[ScopedService(typeof(IGetHmacSecretKeyService))]
+public class GetHmacSecretKeyService : IGetHmacSecretKeyService
 {
     private readonly IDistributedCache _distributedCache;
 
-    public GetHmacSecretKeyServiceHandler(IDistributedCache distributedCache)
+    public GetHmacSecretKeyService(IDistributedCache distributedCache)
     {
         _distributedCache = distributedCache;
     }
 
-    async Task<Result<string>> IRequestHandler<GetHmacSecretKeyIntegrationEventService, Result<string>>.Handle(GetHmacSecretKeyIntegrationEventService request, CancellationToken cancellationToken)
+  
+    async Task<Result<string>> IServiceHandlerAsync<GetHmacSecretKeyServiceParameters, string>.HandleAsync(GetHmacSecretKeyServiceParameters @params)
     {
         try
         {
-            if (request is null)
-                return ResultExceptionFactory.Error<string>($"{nameof(GetHmacSecretKeyIntegrationEventService)} is null", HttpStatusCode.BadRequest);
+            if (@params is null)
+                return ResultExceptionFactory.Error<string>($"{nameof(GetHmacSecretKeyServiceParameters)} is null", HttpStatusCode.BadRequest);
 
-            if (request.ClientId is null)
-                return ResultExceptionFactory.Error<string>($"{nameof(request.ClientId)} is null", HttpStatusCode.BadRequest);
+            if (@params.ClientId is null)
+                return ResultExceptionFactory.Error<string>($"{nameof(@params.ClientId)} is null", HttpStatusCode.BadRequest);
 
             // Set Cache Name
-            string cacheClientName = $"UserClient-{request.ClientId}";
+            string cacheClientName = $"UserClient-{@params.ClientId}";
 
             // Get Cache Value
-            string? cacheValue = await _distributedCache.GetStringAsync(cacheClientName, cancellationToken);
+            string? cacheValue = await _distributedCache.GetStringAsync(cacheClientName, @params.CancellationToken);
 
             if (cacheValue is null)
                 return ResultExceptionFactory.Error<string>($"Unauthorized access", HttpStatusCode.Unauthorized);
@@ -85,7 +91,7 @@ public class HmacSignatureValidationServiceAttribute : Attribute, IAsyncActionFi
     {
 
         var serviceProvider = context.HttpContext.RequestServices;
-        var mediator = serviceProvider.GetRequiredService<IMediator>();
+        var getHmacSecretService = serviceProvider.GetRequiredService<IGetHmacSecretKeyService>();
         var traceIdService = serviceProvider.GetRequiredService<ITraceIdService>();
 
         Result<string> traceIdResult = null;
@@ -114,7 +120,7 @@ public class HmacSignatureValidationServiceAttribute : Attribute, IAsyncActionFi
             var clientId = context.HttpContext.Request.Headers["X-CLIENT-ID"].ToString();
 
             // Fetch the secret key from the database using the client ID
-            var secretResult = await GetSecretKeyFromDatabaseAsync(clientId,mediator);
+            var secretResult = await GetSecretKeyFromDatabaseAsync(clientId,getHmacSecretService);
             if(secretResult.IsFailed)
                 throw new Exception(secretResult.Errors[0].Message);
 
@@ -149,9 +155,9 @@ public class HmacSignatureValidationServiceAttribute : Attribute, IAsyncActionFi
        
     }
 
-    private async Task<Result<string>> GetSecretKeyFromDatabaseAsync(string clientId, IMediator mediator)
+    private async Task<Result<string>> GetSecretKeyFromDatabaseAsync(string clientId, IGetHmacSecretKeyService getHmacSecretKeyService,CancellationToken cancellationToken=default)
     {
-        var result = await mediator.Send(new GetHmacSecretKeyIntegrationEventService(clientId));
+        var result = await getHmacSecretKeyService.HandleAsync(new GetHmacSecretKeyServiceParameters(clientId, cancellationToken));
         if (result.IsFailed)
             return ResultExceptionFactory.Error<string>(result.Errors[0]);
 
