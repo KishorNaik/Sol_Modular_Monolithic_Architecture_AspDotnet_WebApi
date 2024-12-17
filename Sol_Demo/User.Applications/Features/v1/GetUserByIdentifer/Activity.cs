@@ -4,7 +4,9 @@ using Models.Shared.Enums;
 using User.Applications.Shared.BaseController;
 using User.Applications.Shared.Cache;
 using User.Contracts.Features.GetUserByIdentifer;
+using User.Contracts.Shared.Dtos;
 using User.Shared.Services.HmacSignature;
+using Users.Infrastructures.Entities;
 using Users.Infrastructures.Services.GetUsersByIdentifier;
 
 namespace User.Applications.Features.v1.GetUserByIdentifer;
@@ -123,13 +125,13 @@ public sealed class GetUserByIdentiferValidationService : IGetUserByIdentiferVal
 #region Response Service
 public class GetUserByIdentifierResponseServiceParameters
 {
-    public GetUserByIdentiferDbServiceResult GetUserByIdentiferResult { get; }
+    public Tuser User { get; }
 
     public GetUserByIdentifierResponseServiceParameters(
-        GetUserByIdentiferDbServiceResult getUserByIdentiferResult
+        Tuser user
         )
     {
-        GetUserByIdentiferResult = getUserByIdentiferResult;
+        User = user;
     }
 }
 
@@ -149,31 +151,31 @@ public sealed class GetUserByIdentifierResponseService : IGetUserByIdentifierRes
             if (@params is null)
                 return ResultExceptionFactory.Error<AesResponseDto>($"{nameof(GetUserByIdentifierResponseServiceParameters)} is null", HttpStatusCode.BadRequest);
 
-            if(@params.GetUserByIdentiferResult is null)
-                return ResultExceptionFactory.Error<AesResponseDto>($"{nameof(GetUserByIdentiferDbServiceResult)} is null", HttpStatusCode.BadRequest);
+            if(@params.User is null)
+                return ResultExceptionFactory.Error<AesResponseDto>($"{nameof(@params.User)} is null", HttpStatusCode.BadRequest);
 
             // Get Aes Secret Key from User Db
-            string aseSecret = @params!.GetUserByIdentiferResult!.UserCredentials!.AesSecretKey!;
+            string aseSecret = @params!.User!.TuserCredential!.AesSecretKey!;
             if(String.IsNullOrEmpty(aseSecret))
                 return ResultExceptionFactory.Error<AesResponseDto>("Aes Secret Key is empty", HttpStatusCode.NotFound);
 
-            GetUserByIdentiferDbServiceResult getUserByIdentiferDbServiceResult = @params.GetUserByIdentiferResult!;
+            Tuser user = @params.User!;
 
             // Map
             GetUserByIdentiferResponseDto getUserByIdentiferResponseDto = new GetUserByIdentiferResponseDto();
-            getUserByIdentiferResponseDto.Identifier= getUserByIdentiferDbServiceResult.Identifier!;
+            getUserByIdentiferResponseDto.Identifier= user.Identifier!;
             
             getUserByIdentiferResponseDto.User = new UserDto();
-            getUserByIdentiferResponseDto.User.FirstName= getUserByIdentiferDbServiceResult.User!.FirstName!;
-            getUserByIdentiferResponseDto.User.LastName= getUserByIdentiferDbServiceResult.User!.LastName!;
-            getUserByIdentiferResponseDto.User.UserType= getUserByIdentiferDbServiceResult.User!.UserType!;
+            getUserByIdentiferResponseDto.User.FirstName= user!.FirstName!;
+            getUserByIdentiferResponseDto.User.LastName= user.LastName!;
+            getUserByIdentiferResponseDto.User.UserType= (UserTypeEnum)Convert.ToInt32(user.UserType!);
 
             getUserByIdentiferResponseDto.Communication = new UserCommunicationDto();
-            getUserByIdentiferResponseDto.Communication.EmailId= getUserByIdentiferDbServiceResult.UserCommunication!.EmailId!;
-            getUserByIdentiferResponseDto.Communication.MobileNumber=getUserByIdentiferDbServiceResult.UserCommunication.MobileNumber!;
+            getUserByIdentiferResponseDto.Communication.EmailId= user.TuserCommunication.EmailId!;
+            getUserByIdentiferResponseDto.Communication.MobileNumber=user.TuserCommunication!.MobileNumber!;
 
             getUserByIdentiferResponseDto.Organization = new UserOrganizationDto();
-            getUserByIdentiferResponseDto.Organization.OrgId= getUserByIdentiferDbServiceResult.UserOrganization!.OrgId!;
+            getUserByIdentiferResponseDto.Organization.OrgId= user.TusersOrganization!.OrgId!;
 
             // Encrypt Response
             IAesEncrypteWrapper<GetUserByIdentiferResponseDto> aesEncrypteWrapper =
@@ -256,10 +258,10 @@ public class GetUserByIdentifierQueryHandler : IRequestHandler<GetUserByIdentifi
             if (getUserResult.IsFailed)
                 return await _dataResponseFactory.ErrorAsync<AesResponseDto>(getUserResult.Errors[0].Message, (int)getUserResult.Errors[0].Metadata[ConstantValue.StatusCode]);
 
-            GetUserByIdentiferDbServiceResult getUserByIdentiferDbServiceResult = getUserResult.Value.GetUserByIdentiferResult!;
+            Tuser user = getUserResult.Value.User!;
 
             // Response
-            var responseResult = await _getUserByIdentifierResponseService.HandleAsync(new GetUserByIdentifierResponseServiceParameters(getUserByIdentiferDbServiceResult));
+            var responseResult = await _getUserByIdentifierResponseService.HandleAsync(new GetUserByIdentifierResponseServiceParameters(user));
             if (responseResult.IsFailed)
                 return await _dataResponseFactory.ErrorAsync<AesResponseDto>(responseResult.Errors[0].Message, (int)responseResult.Errors[0].Metadata[ConstantValue.StatusCode]);
 

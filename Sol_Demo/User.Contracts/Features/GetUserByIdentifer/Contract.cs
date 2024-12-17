@@ -1,6 +1,7 @@
 ﻿
 using Models.Shared.Enums;
 using System.Text.Json.Serialization;
+using User.Contracts.Shared.Dtos;
 
 namespace User.Contracts.Features.GetUserByIdentifer;
 
@@ -14,29 +15,7 @@ public class GetUserByIdentiferRequestDto
 
 #region Response DTO
 
-public class UserDto
-{
 
-    public string? FirstName { get; set; }
-
-    public string? LastName { get; set; }
-
-    public UserTypeEnum UserType { get; set; }
-
-    public StatusEnum Status { get; set; }
-}
-
-public class UserCommunicationDto
-{
-    public string? EmailId { get; set; }
-
-    public string? MobileNumber { get; set; }
-}
-
-public class UserOrganizationDto
-{
-    public Guid? OrgId { get; set; }
-}
 
 public class GetUserByIdentiferResponseDto
 {

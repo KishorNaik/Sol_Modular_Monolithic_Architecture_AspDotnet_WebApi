@@ -17,6 +17,11 @@ public interface IServiceHandlerVoidAsync<TParams>
     Task<Result> HandleAsync(TParams @params);
 }
 
+public interface IServiceHandlerVoidAsync
+{
+    Task<Result> HandleAsync();
+}
+
 public interface IServiceHandler<TParams, TResult>
 {
     Result<TResult> Handle(TParams @params);
@@ -25,4 +30,9 @@ public interface IServiceHandler<TParams, TResult>
 public interface IServiceHandlerVoid<TParams>
 {
     Result Handle(TParams @params);
+}
+
+public interface IServiceHandlerVoid
+{
+    Result Handle();
 }

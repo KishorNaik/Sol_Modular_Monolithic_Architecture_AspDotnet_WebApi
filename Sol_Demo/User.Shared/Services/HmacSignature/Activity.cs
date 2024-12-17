@@ -22,6 +22,7 @@ using Utility.Shared.ServiceHandler;
 using Azure.Core;
 using System.Threading;
 using sorovi.DependencyInjection.AutoRegister;
+using Users.Infrastructures.Entities;
 
 namespace User.Shared.Services.HmacSignature;
 
@@ -59,13 +60,13 @@ public class GetHmacSecretKeyService : IGetHmacSecretKeyService
                 return ResultExceptionFactory.Error<string>($"Unauthorized access", HttpStatusCode.Unauthorized);
 
             // Get Cache Value
-            GetUserByIdentiferDbServiceResult cacheValueResult = JsonConvert.DeserializeObject<GetUserByIdentiferDbServiceResult>(cacheValue)!;
+            Tuser cacheValueResult = JsonConvert.DeserializeObject<Tuser>(cacheValue)!;
 
             if (cacheValueResult is null)
                 return ResultExceptionFactory.Error<string>($"Unauthorized access", HttpStatusCode.Unauthorized);
 
             // Get HMac Secret Key
-            string? hmacSecretKey = cacheValueResult!.UserCredentials!.HmacSecretKey;
+            string? hmacSecretKey = cacheValueResult!.TuserCredential!.HmacSecretKey;
 
             if (hmacSecretKey is null)
                 return ResultExceptionFactory.Error<string>($"Unauthorized access", HttpStatusCode.Unauthorized);
