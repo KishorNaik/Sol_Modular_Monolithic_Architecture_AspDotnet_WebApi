@@ -25,7 +25,7 @@ public class GetUserByIdentifierController : UserBaseController
     [HttpGet("{identifier}")]
     [MapToApiVersion(1)]
     [DisableRateLimiting]
-    [AllowAnonymous]
+    [Authorize(Policy = ConstantValue.UserOnlyPolicy)]
     [HmacSignatureValidationService]
     [ProducesResponseType<DataResponse<AesResponseDto>>((int)HttpStatusCode.OK)]
     [ProducesResponseType<DataResponse<AesResponseDto>>((int)HttpStatusCode.BadRequest)]

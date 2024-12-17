@@ -1,4 +1,5 @@
 ﻿using sorovi.DependencyInjection.AutoRegister;
+using User.Shared.Services.Policy.Extensions;
 using Utility.Shared.Config;
 using Utility.Shared.Response;
 using Utility.Shared.Traces;
@@ -73,7 +74,7 @@ namespace Host.Api.Extensions.Services
             // JWT
             builder.Services.Configure<JwtAppSetting>(builder.Configuration.GetSection("JWT"));
             JwtAppSetting jwtAppSetting = builder.Configuration.GetSection("JWT").Get<JwtAppSetting>()!;
-            builder.Services.AddJwtToken(jwtAppSetting);
+            builder.Services.AddJwtToken(jwtAppSetting, JwtPolicyExtensions.RegisterPolicy()!);
 
             // Auto Register Dependency Injection
             //builder.Services.RegisterServices();

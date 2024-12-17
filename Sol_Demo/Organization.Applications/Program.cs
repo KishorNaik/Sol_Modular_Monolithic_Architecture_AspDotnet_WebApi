@@ -5,6 +5,7 @@ using Microsoft.Extensions.Hosting;
 using Models.Shared.Constant;
 using Organization.Infrastructures.Context;
 using Organization.Infrastructures.Services.AddOrganization;
+using User.Shared;
 
 namespace Organization.Applications;
 
@@ -39,6 +40,9 @@ public static class Program
             config.WithAssemblies(typeof(Program).Assembly, typeof(Organization.Infrastructures.Program).Assembly);
             return config;
         });
+
+        // Add User Shared
+        services.AddUserShared();
 
         return services;
     }

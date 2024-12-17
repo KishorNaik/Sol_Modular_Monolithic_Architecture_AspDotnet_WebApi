@@ -17,4 +17,10 @@ public static class ConstantValue
     public const int IvLength = 16;
 
     public static string? AesSecretKey = "AesSecretKey";
+
+    public const string UserOnlyPolicy = "UserOnlyPolicy";
+
+    public const string AdminOnlyPolicy = "AdminOnlyPolicy";
+
+    public const string UserAndAdminPolicy = "UserAndAdminPolicy";
 }
