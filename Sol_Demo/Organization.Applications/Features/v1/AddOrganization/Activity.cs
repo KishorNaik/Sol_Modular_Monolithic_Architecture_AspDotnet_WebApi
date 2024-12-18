@@ -81,7 +81,7 @@ public sealed class AddOrgnizationValidationService : IAddOrgnizationValidationS
 
             var validationResult = await dtoValidationHelper.ValidateAsync(addOrganizationRequestDto);
             if (validationResult.IsFailed)
-                return ResultExceptionFactory.Error(validationResult.Errors[0]);
+                return ResultExceptionFactory.Error(validationResult.Errors[0].Message, HttpStatusCode.BadRequest);
 
             return Result.Ok();
         }
@@ -134,7 +134,7 @@ public sealed class AddOrganizationDecrypteService : IAddOrganizationDecrypteSer
             // Get Aes Secret Value from Config Manager
             var aesSecret = _configHelper.GetValue(ConstantValue.AesSecretKey!);
             if (aesSecret.IsFailed)
-                return ResultExceptionFactory.Error<AddOrganizationRequestDto>("Aes Secret Key not found", HttpStatusCode.NotFound);
+                return ResultExceptionFactory.Error<AddOrganizationRequestDto>(aesSecret.Errors[0]);
 
             // Decrypt Request
             IAesDecrypteWrapper<AddOrganizationRequestDto> aesDecrypteWrapper =
@@ -408,27 +408,27 @@ public sealed class AddOrganizationCommandHandler : IRequestHandler<AddOrganizat
             // Decrypt
             var aesDecryptionResult = await _addOrganizationDecrypteService.HandleAsync(new AddOrganizationDecrypteParameters(aesRequestDto));
             if (aesDecryptionResult.IsFailed)
-                return await _dataResponseFactory.ErrorAsync<AesResponseDto>(aesDecryptionResult.Errors[0].Message, (int)HttpStatusCode.BadRequest);
+                return await _dataResponseFactory.ErrorAsync<AesResponseDto>(aesDecryptionResult.Errors[0].Message, Convert.ToInt32(aesDecryptionResult.Errors[0].Metadata[ConstantValue.StatusCode]));
 
             AddOrganizationRequestDto addOrganizationRequestDto = aesDecryptionResult.Value!;
 
             // Validation
             var validationResult = await _addOrgnizationValidationService.HandleAsync(addOrganizationRequestDto);
             if (validationResult.IsFailed)
-                return await _dataResponseFactory.ErrorAsync<AesResponseDto>(validationResult.Errors[0].Message, (int)HttpStatusCode.BadRequest);
+                return await _dataResponseFactory.ErrorAsync<AesResponseDto>(aesDecryptionResult.Errors[0].Message, Convert.ToInt32(aesDecryptionResult.Errors[0].Metadata[ConstantValue.StatusCode]));
 
             // Map AddOraganizationRequestDTO to TOrganization Entity
             var organizationResult = await _addOrganizationRequestEntityMapService
                 .HandleAsync(new AddOrganizationRequestEntityMapParameters(addOrganizationRequestDto, cancellationToken));
             if (organizationResult.IsFailed)
-                return await _dataResponseFactory.ErrorAsync<AesResponseDto>(organizationResult.Errors[0].Message, (int)HttpStatusCode.BadRequest);
+                return await _dataResponseFactory.ErrorAsync<AesResponseDto>(aesDecryptionResult.Errors[0].Message, Convert.ToInt32(aesDecryptionResult.Errors[0].Metadata[ConstantValue.StatusCode]));
 
             Torganization torganization = organizationResult.Value.Torganization!;
 
             // Add Organization
             var addOrganizationResult = await _addOrganizationDbService.HandleAsync(new AddOrganizationSqlParameters(torganization, cancellationToken));
             if (addOrganizationResult.IsFailed)
-                return await _dataResponseFactory.ErrorAsync<AesResponseDto>(addOrganizationResult.Errors[0].Message, (int)HttpStatusCode.BadRequest);
+                return await _dataResponseFactory.ErrorAsync<AesResponseDto>(aesDecryptionResult.Errors[0].Message, Convert.ToInt32(aesDecryptionResult.Errors[0].Metadata[ConstantValue.StatusCode]));
 
             torganization = addOrganizationResult.Value!;
 

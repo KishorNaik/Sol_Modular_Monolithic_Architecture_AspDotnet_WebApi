@@ -59,6 +59,11 @@ public sealed class GetUserByIdentiferDbService : IGetUserByIdentiferDbService
 
             var result = await _usersDbContext
                 .Tusers
+                .Include(x=>x.TuserToken)
+                .Include(x=>x.TuserCommunication)
+                .Include(x=>x.TuserCredential)
+                .Include(x=>x.TuserSetting)
+                .Include(x=>x.TusersOrganization)
                 .AsNoTracking()
                 .AsQueryable()     
                 .FirstOrDefaultAsync(x => x.Identifier == @params.Identifer && x.Status == Convert.ToBoolean((int)@params.Status!), @params.CancellationToken);

@@ -24,7 +24,10 @@ public static class SqlCacheHelper
             AbsoluteExpirationRelativeToNow = TimeSpan.FromDays(Convert.ToDouble(cacheTime))
         };
 
-        var jsonData = JsonConvert.SerializeObject(value);
+        var jsonData = JsonConvert.SerializeObject(value, new JsonSerializerSettings
+        {
+            ReferenceLoopHandling = ReferenceLoopHandling.Ignore
+        });
         return distributedCache.SetStringAsync(cacheKey, jsonData, cacheOptions,cancellationToken);
     }
 

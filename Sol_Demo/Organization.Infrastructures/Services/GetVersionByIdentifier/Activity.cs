@@ -54,7 +54,7 @@ public sealed class GetOrganizationVersionByIdentiferDbService : IGetOrganizatio
                 ?.Version;
 
             if (versionResult is null)
-                return ResultExceptionFactory.Error<byte[]>($"{nameof(@params.Identifier)}", System.Net.HttpStatusCode.NotFound);
+                return ResultExceptionFactory.Error<byte[]>($"{nameof(@params.Identifier)} is not found", System.Net.HttpStatusCode.NotFound);
 
             //string versionStr = Encoding.UTF8.GetString(versionResult);
 

@@ -7,5 +7,6 @@ CREATE TABLE [UserSchema].[TUsersOrganizations]
     [ModifiedDate] DATETIME NULL DEFAULT(GETDATE()),
     [Version] ROWVERSION NULL
 	CONSTRAINT [FK_TUsersOrganizations_TUsers] FOREIGN KEY (UserId) REFERENCES UserSchema.TUsers(Identifier)
-	ON UPDATE CASCADE
+	ON UPDATE CASCADE	
+	ON DELETE CASCADE
 )

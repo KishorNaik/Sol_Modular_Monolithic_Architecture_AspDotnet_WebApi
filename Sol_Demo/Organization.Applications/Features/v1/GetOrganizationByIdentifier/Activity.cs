@@ -44,6 +44,7 @@ public class GetOrganizationByIdentifierController : OrganizationBaseController
     [HttpGet("{identifier}")]
     [MapToApiVersion(1)]
     [DisableRateLimiting]
+    //[AllowAnonymous]
     [Authorize(Policy =ConstantValue.UserOnlyPolicy)]
     [HmacSignatureValidationService]
     [ProducesResponseType<DataResponse<AesResponseDto>>((int)HttpStatusCode.OK)]
@@ -132,7 +133,7 @@ public sealed class GetOrganizationByIdentifierValidationService : IGetOrganizat
             var validationResult = await dtoValidationHelper.ValidateAsync(@params);
 
             if (validationResult.IsFailed)
-                return ResultExceptionFactory.Error(validationResult.Errors[0]);
+                return ResultExceptionFactory.Error(validationResult.Errors[0].Message, HttpStatusCode.BadRequest);
 
             return Result.Ok();
         }
@@ -185,7 +186,7 @@ public sealed class GetOrganizationByIdentifierResponseService : IGetOrganizatio
             // Get Aes Secret Value from Config Manager
             var aesSecret = _configHelper.GetValue(ConstantValue.AesSecretKey!);
             if (aesSecret.IsFailed)
-                return ResultExceptionFactory.Error<AesResponseDto>("Aes Secret Key not found", HttpStatusCode.NotFound);
+                return ResultExceptionFactory.Error<AesResponseDto>(aesSecret.Errors[0]);
 
             Torganization torganization = @params.Torganization;
 
@@ -264,7 +265,7 @@ public sealed class GetOrganizationByIdentifierQueryHandler : IRequestHandler<Ge
             // Validation
             var validationResult = await _getOrganizationByIdentifierValidationService.HandleAsync(requestDto);
             if (validationResult.IsFailed)
-                return await _dataResponseFactory.ErrorAsync<AesResponseDto>(validationResult.Errors[0].Message, (int)HttpStatusCode.BadRequest);
+                return await _dataResponseFactory.ErrorAsync<AesResponseDto>(validationResult.Errors[0].Message, (int)validationResult.Errors[0].Metadata[ConstantValue.StatusCode]);
 
             Guid? identifer = request.Request.Identifier;
 
@@ -342,7 +343,7 @@ public sealed class GetOrganizationByIdentifierDecryptService : IGetOrganization
             // Get Aes Secret Value from Config Manager
             var aesSecret = _configHelper.GetValue(ConstantValue.AesSecretKey!);
             if (aesSecret.IsFailed)
-                return ResultExceptionFactory.Error<GetOrganizationByIdentifierDecryptServiceResult>("Aes Secret Key not found", HttpStatusCode.NotFound);
+                return ResultExceptionFactory.Error<GetOrganizationByIdentifierDecryptServiceResult>(aesSecret.Errors[0]);
 
             var aesSecretValue = aesSecret.Value!;
 

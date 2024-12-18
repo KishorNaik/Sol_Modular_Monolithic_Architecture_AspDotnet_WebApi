@@ -9,4 +9,5 @@
 	[Version] ROWVERSION NULL
 	CONSTRAINT [FK_TUserCommunications_TUsers] FOREIGN KEY (UserId) REFERENCES UserSchema.TUsers(Identifier)
 	ON UPDATE CASCADE
+	ON DELETE CASCADE
 )

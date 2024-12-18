@@ -79,19 +79,19 @@ public sealed class AddUserValidator : AbstractValidator<AddUserRequestDto>
     private void EmailIdValidation()
     {
         RuleFor(x => x.Email)
-            .NotEmpty().WithErrorCode("EmailId")
-            .EmailAddress().WithErrorCode("EmailId")
-            .Must(name => !Regex.IsMatch(name, "<.*>|<.*|.*>")).WithMessage("Email must not contain HTML tags.").WithErrorCode("EmailId")
-            .Must(name => !Regex.IsMatch(name, @"<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>")).WithMessage("Email must not contain JavaScript.").WithErrorCode("EmailId");
+            .NotEmpty().WithErrorCode("Email")
+            .EmailAddress().WithErrorCode("Email")
+            .Must(name => !Regex.IsMatch(name, "<.*>|<.*|.*>")).WithMessage("Email must not contain HTML tags.").WithErrorCode("Email")
+            .Must(name => !Regex.IsMatch(name, @"<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>")).WithMessage("Email must not contain JavaScript.").WithErrorCode("Email");
     }
 
     private void MobileValidation()
     {
         RuleFor(x => x.Mobile)
-            .NotEmpty().WithErrorCode("MobileNo")
-            .Matches(@"^\d{10}$").WithMessage("Mobile no must be 10 digit").WithErrorCode("MobileNo")
-            .Must(name => !Regex.IsMatch(name, "<.*>|<.*|.*>")).WithMessage("Mobile No must not contain HTML tags.").WithErrorCode("MobileNo")
-            .Must(name => !Regex.IsMatch(name, @"<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>")).WithMessage("Mobile No Name must not contain JavaScript.").WithErrorCode("MobileNo");
+            .NotEmpty().WithErrorCode("Mobile")
+            .Matches(@"^\d{10}$").WithMessage("Mobile no must be 10 digit").WithErrorCode("Mobile")
+            .Must(name => !Regex.IsMatch(name, "<.*>|<.*|.*>")).WithMessage("Mobile No must not contain HTML tags.").WithErrorCode("Mobile")
+            .Must(name => !Regex.IsMatch(name, @"<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>")).WithMessage("Mobile No Name must not contain JavaScript.").WithErrorCode("Mobile");
     }
 
     private void PasswordValidation()
@@ -151,7 +151,7 @@ public class AddUserValidationService : IAddUserValidationService
 
             var validationResult=await validator.ValidateAsync(@params);
             if(validationResult.IsFailed)
-                return ResultExceptionFactory.Error(validationResult.Errors[0]);
+                return ResultExceptionFactory.Error(validationResult.Errors[0].Message, HttpStatusCode.BadRequest);
 
             return Result.Ok();
         }
@@ -461,7 +461,7 @@ public sealed class AddUserCommandHandler : IRequestHandler<AddUserCommand, Data
             }));
 
             if(orgExistsResult is null)
-                return await _dataResponseFactory.ErrorAsync<AesResponseDto>($"{nameof(IsOrganizationExistsIntegrationEventService)} object is null", (int)HttpStatusCode.BadRequest);
+                return await _dataResponseFactory.ErrorAsync<AesResponseDto>($"{nameof(IsOrganizationExistsIntegrationEventService)} object is null", (int)HttpStatusCode.NotAcceptable);
 
             if(!(bool)orgExistsResult?.Success!)
                 return await _dataResponseFactory.ErrorAsync<AesResponseDto>(orgExistsResult?.Message!, (int)orgExistsResult?.StatusCode!);

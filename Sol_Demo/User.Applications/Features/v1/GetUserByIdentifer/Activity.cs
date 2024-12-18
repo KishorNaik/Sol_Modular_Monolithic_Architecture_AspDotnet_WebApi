@@ -27,8 +27,9 @@ public class GetUserByIdentifierController : UserBaseController
     [HttpGet("{identifier}")]
     [MapToApiVersion(1)]
     [DisableRateLimiting]
-    [Authorize(Policy = ConstantValue.UserOnlyPolicy)]
-    [HmacSignatureValidationService]
+    [AllowAnonymous]
+    //[Authorize(Policy = ConstantValue.UserOnlyPolicy)]
+    //[HmacSignatureValidationService]
     [ProducesResponseType<DataResponse<AesResponseDto>>((int)HttpStatusCode.OK)]
     [ProducesResponseType<DataResponse<AesResponseDto>>((int)HttpStatusCode.BadRequest)]
     [ProducesResponseType<DataResponse<AesResponseDto>>((int)HttpStatusCode.NotFound)]
@@ -110,7 +111,7 @@ public sealed class GetUserByIdentiferValidationService : IGetUserByIdentiferVal
             var validationResult = await dtoValidationHelper.ValidateAsync(@params);
 
             if (validationResult.IsFailed)
-                return ResultExceptionFactory.Error(validationResult.Errors[0]);
+                return ResultExceptionFactory.Error(validationResult.Errors[0].Message, HttpStatusCode.BadRequest);
 
             return Result.Ok();
         }

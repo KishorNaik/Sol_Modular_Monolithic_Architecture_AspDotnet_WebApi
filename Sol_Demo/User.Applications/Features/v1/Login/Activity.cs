@@ -167,7 +167,7 @@ public class UserLoginValidationService : IUserLoginValidationService
 
             var validationResult = await dtoValidationHelper.ValidateAsync(@params);
             if (validationResult.IsFailed)
-                return ResultExceptionFactory.Error(validationResult.Errors[0]);
+                return ResultExceptionFactory.Error(validationResult.Errors[0].Message, HttpStatusCode.BadRequest);
 
             return Result.Ok();
         }

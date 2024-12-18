@@ -8,5 +8,5 @@ CREATE TABLE [UserSchema].[TUsers]
     [Status] BIT NOT NULL,
     [CreatedDate] DATETIME NULL DEFAULT GETDATE(),
     [ModifiedDate] DATETIME NULL DEFAULT GETDATE(),
-    [Version] ROWVERSION NULL,
+    [Version] ROWVERSION NULL
 )

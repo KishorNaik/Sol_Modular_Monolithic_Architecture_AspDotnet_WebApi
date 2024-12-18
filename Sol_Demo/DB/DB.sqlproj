@@ -82,6 +82,6 @@
     <Build Include="Modules\Users\Tables\TUserSettings.sql" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="DB_Local.publish.xml" />
+    <None Include="Local_DB.publish.xml" />
   </ItemGroup>
 </Project>

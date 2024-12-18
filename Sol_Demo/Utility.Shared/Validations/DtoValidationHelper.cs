@@ -1,6 +1,8 @@
 ﻿using FluentResults;
 using FluentValidation;
 using Microsoft.Extensions.DependencyInjection;
+using System.Net;
+using Utility.Shared.Exceptions;
 
 namespace Utility.Shared.Validations;
 
@@ -21,7 +23,9 @@ public class DtoValidationHelper<TDto, TDtoValidator>
         var validationResult = await validator.ValidateAsync(dto);
         if (validationResult.IsValid == false)
         {
-            return Result.Fail(validationResult.Errors.Select(x => x.ErrorMessage).ToList());
+            //return Result.Fail(validationResult.Errors.Select(x => x.ErrorMessage).ToList());
+            string errors = string.Join(",", validationResult.Errors.Select(x => x.ErrorMessage));
+            return ResultExceptionFactory.Error(errors, HttpStatusCode.BadRequest);
         }
 
         return Result.Ok();

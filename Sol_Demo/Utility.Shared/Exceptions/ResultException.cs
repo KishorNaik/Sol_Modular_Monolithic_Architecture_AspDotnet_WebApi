@@ -12,7 +12,7 @@ public static class ResultExceptionFactory
     }
 
     public static Result Error(string message, HttpStatusCode httpStatusCode)
-    {
+    { 
         return Result.Fail(new FluentResults.Error(message).WithMetadata(ConstantValue.StatusCode, httpStatusCode));
     }
 
