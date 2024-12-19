@@ -8,21 +8,27 @@ const string defaultSecretKey = "042569c1-9dc8-4731-9363-18c1f268a1cf-225dbb41-c
 
 AesHelper aesHelper = new AesHelper(secretKey: defaultSecretKey);
 
-var request = new
-{
-    FirstName = "Jane",
-    LastName = "Doe",
-    Email = "jane@example.com",
-    Password = "123456789",
-    Mobile = "1234567891",
-    OrgId = "78e01393-fad6-43b9-8244-22eea6bb41ce"
+//var request = new
+//{
+//    FirstName = "Jane",
+//    LastName = "Doe",
+//    Email = "jane@example.com",
+//    Password = "123456789",
+//    Mobile = "1234567891",
+//    OrgId = "78e01393-fad6-43b9-8244-22eea6bb41ce"
 
-};
+//};
 
 //var request = new
 //{
 //    Name = "Shree Krishna Ltd"
 //};
+
+var request = new
+{
+    EmailId = "jane@example.com",
+    Password = "123456789"
+};
 
 var json = JsonConvert.SerializeObject(request);
 
@@ -31,3 +37,4 @@ Console.WriteLine($"Encrypted:{encrypted}");
 
 var decrypted = await aesHelper.DecryptAsync(encrypted);
 Console.WriteLine($"Decrypted:{decrypted}");
+

@@ -1,6 +1,9 @@
 ﻿using Microsoft.AspNetCore.Mvc.Infrastructure;
 using Models.Shared.Constant;
+using Models.Shared.Enums;
+using User.Applications.Features.v1.AddUsers;
 using User.Applications.Shared.BaseController;
+using User.Applications.Shared.Cache;
 using User.Contracts.Features.EmailVerification;
 using Users.Infrastructures.Contexts;
 using Users.Infrastructures.Entities;
@@ -116,6 +119,64 @@ public class UserEmailVerificationValidationService : IUserEmailVerificationVali
     }
 }
 
+#endregion
+
+#region Domain Event
+public class UserEmailVerifiedDominEvent : INotification
+{
+    public Guid? Identifier { get; }
+
+    public StatusEnum Status { get; }
+
+    public UserEmailVerifiedDominEvent(Guid? identifier, StatusEnum status)
+    {
+        Identifier = identifier;
+        Status = status;
+    }
+}
+
+public class UserEmailVerifiedDomainEventHandler : INotificationHandler<UserEmailVerifiedDominEvent>
+{
+    private readonly IUserSharedCacheService _userSharedCacheService;
+    private readonly ILogger<UserCreatedDomainEventHandler> _logger = null;
+
+    public UserEmailVerifiedDomainEventHandler(IUserSharedCacheService userSharedCacheService,ILogger<UserCreatedDomainEventHandler> logger)
+    {
+        _userSharedCacheService = userSharedCacheService;
+        _logger = logger;
+    }
+
+    public async Task HandleCacheAsync(UserEmailVerifiedDominEvent notification, CancellationToken cancellationToken)
+    {
+        var result = await _userSharedCacheService.HandleAsync(
+            new UserSharedCacheServiceParameters(notification.Identifier, (StatusEnum)Convert.ToInt32(notification?.Status), cancellationToken));
+
+        if (result.IsFailed)
+        {
+            _logger.LogError(result.Errors[0].Message);
+            return;
+        }
+
+        _logger.LogInformation($"UserCreatedDomainEventHandler Cache updated: {result.Value.IsCached}");
+
+    }
+
+    Task INotificationHandler<UserEmailVerifiedDominEvent>.Handle(UserEmailVerifiedDominEvent notification, CancellationToken cancellationToken)
+    {
+        try
+        {
+            _ = BackgroundJob.Enqueue(() => HandleCacheAsync(notification, cancellationToken));
+
+            return Task.CompletedTask;
+        }
+        catch(Exception ex)
+        {
+            _logger.LogError("Error in UserEmailVerifiedDomainEventHandler");
+            throw;
+        }
+    }
+}
+
 #endregion 
 
 #region Command Handler
@@ -136,13 +197,15 @@ public class UserEmailVerificationCommandHandler : IRequestHandler<UserEmailVeri
     private readonly IUserEmailVerificationValidationService _userEmailVerificationValidationService;
     private readonly IGetUserDataByEmailTokenDbService _getUserDataByEmailTokenDbService;
     private readonly IUpdateUserStatusDbService _updateUserStatusDbService;
+    private readonly IMediator _mediator;
 
     public UserEmailVerificationCommandHandler(
             IDataResponseFactory dataResponseFactory,
             UsersDbContext dbContext,
             IUserEmailVerificationValidationService userEmailVerificationValidationService,
             IGetUserDataByEmailTokenDbService getUserDataByEmailTokenDbService,
-            IUpdateUserStatusDbService updateUserStatusDbService
+            IUpdateUserStatusDbService updateUserStatusDbService,
+            IMediator mediator
         )
     {
         _dataResponseFactory = dataResponseFactory;
@@ -150,6 +213,7 @@ public class UserEmailVerificationCommandHandler : IRequestHandler<UserEmailVeri
         _userEmailVerificationValidationService = userEmailVerificationValidationService;
         _getUserDataByEmailTokenDbService = getUserDataByEmailTokenDbService;
         _updateUserStatusDbService = updateUserStatusDbService;
+        _mediator = mediator;
     }
 
     async Task<DataResponse<AesResponseDto>> IRequestHandler<UserEmailVerificationCommand, DataResponse<AesResponseDto>>
@@ -218,6 +282,9 @@ public class UserEmailVerificationCommandHandler : IRequestHandler<UserEmailVeri
                     )
                 );
             }
+
+            // Publish UserEmailVerifiedDominEvent
+            await _mediator.Publish(new UserEmailVerifiedDominEvent(tuser.Identifier, StatusEnum.Active), cancellationToken);
 
             await transaction.CommitAsync(cancellationToken);
             return await _dataResponseFactory.SuccessAsync<AesResponseDto>(

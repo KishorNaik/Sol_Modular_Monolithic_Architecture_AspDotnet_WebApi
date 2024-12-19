@@ -6,9 +6,9 @@ namespace User.Contracts.Features.Login;
 #region Request Dto
 public class UserLoginRequestDto
 {
-    public string? EmailId { get; }
+    public string? EmailId { get; set; }
 
-    public string? Password { get; }
+    public string? Password { get; set; }
 }
 #endregion
 

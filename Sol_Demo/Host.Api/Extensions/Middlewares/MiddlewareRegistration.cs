@@ -13,6 +13,9 @@ public static class MiddlewareRegistration
         // Http Logging
         app.UseHttpLogging();
 
+        // Use Authorize Exception
+        app.UseAuthorizeExceptionMiddleware();
+
         // Configure the HTTP request pipeline.
         if (app.Environment.IsDevelopment())
         {
@@ -50,8 +53,8 @@ public static class MiddlewareRegistration
         // Use Antiforgery
         app.UseAntiforgery();
 
-        // Use Authorize Exception
-        app.UseAuthorizeExceptionMiddleware();
+        //// Use Authorize Exception
+        //app.UseAuthorizeExceptionMiddleware();
 
         // Use Jwt
         app.UseJwtToken();

@@ -69,6 +69,8 @@ public class AesDecrypteWrapper<TResult> : IAesDecrypteWrapper<TResult>
     {
         try
         {
+            Console.WriteLine($"Type: {typeof(TResult)}");
+
             if (@params is null)
                 return ResultExceptionFactory.Error<TResult>("AesDecrypteWrapperParameter is null", HttpStatusCode.BadRequest);
 

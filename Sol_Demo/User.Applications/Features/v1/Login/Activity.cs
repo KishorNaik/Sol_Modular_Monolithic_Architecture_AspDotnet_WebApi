@@ -598,14 +598,14 @@ public class UserLoginCommandHandler : IRequestHandler<UserLoginCommand, DataRes
             // Validate Service
             var validateServiceResult = await _userLoginValidationService.HandleAsync(userLoginRequestDto);
             if (validateServiceResult.IsFailed)
-                return await _dataResponseFactory.ErrorAsync<AesResponseDto>(validateServiceResult.Errors[0].Message, Convert.ToInt32(decryptServiceResult.Errors[0].Metadata[ConstantValue.StatusCode]), null!);
+                return await _dataResponseFactory.ErrorAsync<AesResponseDto>(validateServiceResult.Errors[0].Message, Convert.ToInt32(validateServiceResult.Errors[0].Metadata[ConstantValue.StatusCode]), null!);
 
             // Get User Data by Email Id
             var getUserDataByEmailIdServiceResult = await _getUserDataByEmailIdService.HandleAsync(
                     new GetUserDataByEmailIdServiceParameters(userLoginRequestDto.EmailId!, cancellationToken)
                 );
             if (getUserDataByEmailIdServiceResult.IsFailed)
-                return await _dataResponseFactory.ErrorAsync<AesResponseDto>(getUserDataByEmailIdServiceResult.Errors[0].Message, Convert.ToInt32(decryptServiceResult.Errors[0].Metadata[ConstantValue.StatusCode]), null!);
+                return await _dataResponseFactory.ErrorAsync<AesResponseDto>(getUserDataByEmailIdServiceResult.Errors[0].Message, Convert.ToInt32(getUserDataByEmailIdServiceResult.Errors[0].Metadata[ConstantValue.StatusCode]), null!);
 
             GetUserDataByEmailServiceResult getUserDataByEmailServiceResult = getUserDataByEmailIdServiceResult.Value!;
 
@@ -614,7 +614,7 @@ public class UserLoginCommandHandler : IRequestHandler<UserLoginCommand, DataRes
                     new UserLoginCredentialValidServiceParameters(getUserDataByEmailServiceResult, userLoginRequestDto.Password!)
                 );
             if(isValidLoginServiceResult.IsFailed)
-                return await _dataResponseFactory.ErrorAsync<AesResponseDto>(getUserDataByEmailIdServiceResult.Errors[0].Message, Convert.ToInt32(decryptServiceResult.Errors[0].Metadata[ConstantValue.StatusCode]), null!);
+                return await _dataResponseFactory.ErrorAsync<AesResponseDto>(getUserDataByEmailIdServiceResult.Errors[0].Message, Convert.ToInt32(isValidLoginServiceResult.Errors[0].Metadata[ConstantValue.StatusCode]), null!);
 
             // Generate Jwt Claims
             var jwtClaimsResult = await _userLoginGenerateJwtAndRefreshTokenService.HandleAsync(

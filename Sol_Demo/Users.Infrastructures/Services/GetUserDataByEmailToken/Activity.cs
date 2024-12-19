@@ -65,7 +65,12 @@ public class GetUserDataByEmailTokenDbService : IGetUserDataByEmailTokenDbServic
                 .Tusers
                 .AsNoTracking()
                 .AsQueryable()
-                .FirstOrDefaultAsync(x=> x.TuserSetting.IsEmailVerified==Convert.ToBoolean(Convert.ToInt32(VerifiedEnum.Yes)), @params.CancellationToken);
+                .Include(x=> x.TuserSetting)
+                .Include(x=> x.TuserToken)
+                .FirstOrDefaultAsync(
+                    x=> x.TuserSetting.IsEmailVerified==Convert.ToBoolean(Convert.ToInt32(VerifiedEnum.Yes)) 
+                    && x.TuserToken.EmailToken==@params.Token,@params.CancellationToken
+                );
 
             if(isEmailVerified is not null)
                 return ResultExceptionFactory.Error("User is already verified", HttpStatusCode.NotAcceptable);
@@ -75,6 +80,11 @@ public class GetUserDataByEmailTokenDbService : IGetUserDataByEmailTokenDbServic
                 .Tusers
                 .AsNoTracking()
                 .AsQueryable()
+                .Include(x => x.TuserToken)
+                .Include(x => x.TuserCommunication)
+                .Include(x => x.TuserCredential)
+                .Include(x => x.TuserSetting)
+                .Include(x => x.TusersOrganization)
                 .FirstOrDefaultAsync(x=> x.TuserToken.EmailToken==@params.Token, @params.CancellationToken);
 
             if(user is null)

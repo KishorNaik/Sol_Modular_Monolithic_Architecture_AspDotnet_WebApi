@@ -123,8 +123,8 @@ public class UserSharedCacheService : IUserSharedCacheService
                     var userResult = await _getUserByIdentiferDbService
                         .HandleAsync(
                             new GetUserByIdentiferDbServiceSqlParameters(
-                                cacheValueResult.Identifier,
-                                (StatusEnum)Convert.ToInt32(cacheValueResult?.Status), 
+                                @params.Identifier.Value,
+                                (StatusEnum)Convert.ToInt32(@params.Status), 
                                 @params.CancellationToken
                             )
                         );
