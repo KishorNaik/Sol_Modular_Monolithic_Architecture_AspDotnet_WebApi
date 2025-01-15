@@ -30,3 +30,13 @@ public class UserOrganizationDto
 {
     public Guid? OrgId { get; set; }
 }
+
+public class UserCredentialDto
+{
+
+    public Guid? ClientId { get; set; }
+
+    public string? HmacSecretKey { get; set; }
+
+    public string? AesSecretId { get; set; }
+}

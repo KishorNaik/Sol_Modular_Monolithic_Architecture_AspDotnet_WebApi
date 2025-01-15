@@ -48,37 +48,37 @@ public class UserLoginController : UserBaseController
 #endregion
 
 #region Decrypt Service
-public class UserLoginDecrypServiceParameters
+public class UserLoginDecryptServiceParameters
 {
     public AesRequestDto AesRequestDto { get; }
 
-    public UserLoginDecrypServiceParameters(AesRequestDto aesRequestDto)
+    public UserLoginDecryptServiceParameters(AesRequestDto aesRequestDto)
     {
         AesRequestDto = aesRequestDto;
     }
 }
 
-public interface IUserLoginDecrypService: IServiceHandlerAsync<UserLoginDecrypServiceParameters, UserLoginRequestDto>
+public interface IUserLoginDecryptService: IServiceHandlerAsync<UserLoginDecryptServiceParameters, UserLoginRequestDto>
 {
 
 }
 
-[ScopedService(typeof(IUserLoginDecrypService))]
-public class UserLoginDecrypService : IUserLoginDecrypService
+[ScopedService(typeof(IUserLoginDecryptService))]
+public class UserLoginDecryptService : IUserLoginDecryptService
 {
     private readonly IConfigHelper _configHelper = null;
 
-    public UserLoginDecrypService(IConfigHelper configHelper)
+    public UserLoginDecryptService(IConfigHelper configHelper)
     {
         _configHelper = configHelper;
     }
 
-    async Task<Result<UserLoginRequestDto>> IServiceHandlerAsync<UserLoginDecrypServiceParameters, UserLoginRequestDto>.HandleAsync(UserLoginDecrypServiceParameters @params)
+    async Task<Result<UserLoginRequestDto>> IServiceHandlerAsync<UserLoginDecryptServiceParameters, UserLoginRequestDto>.HandleAsync(UserLoginDecryptServiceParameters @params)
     {
         try
         {
             if(@params is null)
-                return ResultExceptionFactory.Error<UserLoginRequestDto>($"{nameof(UserLoginDecrypServiceParameters)} is null", HttpStatusCode.BadRequest);
+                return ResultExceptionFactory.Error<UserLoginRequestDto>($"{nameof(UserLoginDecryptServiceParameters)} is null", HttpStatusCode.BadRequest);
 
             if(@params.AesRequestDto is null)
                 return ResultExceptionFactory.Error<UserLoginRequestDto>($"{nameof(@params.AesRequestDto)} is null", HttpStatusCode.BadRequest);
@@ -492,6 +492,12 @@ public class UserLoginResponseService : IUserLoginResponseService
             userLoginResponseDto.Communication.EmailId = tuser.TuserCommunication.EmailId;
             userLoginResponseDto.Communication.MobileNumber = tuser.TuserCommunication.MobileNumber;
 
+            userLoginResponseDto.Secrets = new UserCredentialDto();
+            userLoginResponseDto.Secrets.ClientId = tuser.TuserCredential.ClientId;
+            userLoginResponseDto.Secrets.AesSecretId = tuser.TuserCredential.AesSecretKey;
+            userLoginResponseDto.Secrets.HmacSecretKey = tuser.TuserCredential.HmacSecretKey;
+
+
             // Encrypt Response
             IAesEncrypteWrapper<UserLoginResponseDto> aesEncrypteWrapper =
             new AesEncryptWrapper<UserLoginResponseDto>();
@@ -535,7 +541,7 @@ public class UserLoginCommand : IRequest<DataResponse<AesResponseDto>>
 public class UserLoginCommandHandler : IRequestHandler<UserLoginCommand, DataResponse<AesResponseDto>>
 {
     private readonly IDataResponseFactory _dataResponseFactory;
-    private readonly IUserLoginDecrypService _userLoginDecrypService;
+    private readonly IUserLoginDecryptService _userLoginDecrypService;
     private readonly IUserLoginValidationService _userLoginValidationService;
     private readonly IGetUserDataByEmailIdService _getUserDataByEmailIdService;
     private readonly IUserLoginCredentialValidService _userLoginCredentialValidService;
@@ -548,7 +554,7 @@ public class UserLoginCommandHandler : IRequestHandler<UserLoginCommand, DataRes
 
     public UserLoginCommandHandler(
             IDataResponseFactory dataResponseFactory,
-            IUserLoginDecrypService userLoginDecrypService,
+            IUserLoginDecryptService userLoginDecrypService,
             IUserLoginValidationService userLoginValidationService,
             IGetUserDataByEmailIdService getUserDataByEmailIdService,
             IUserLoginCredentialValidService userLoginCredentialValidService,
@@ -588,7 +594,7 @@ public class UserLoginCommandHandler : IRequestHandler<UserLoginCommand, DataRes
 
             // Decrypt Service
             var decryptServiceResult = await _userLoginDecrypService.HandleAsync(
-                    new UserLoginDecrypServiceParameters(request.AesRequestDto)
+                    new UserLoginDecryptServiceParameters(request.AesRequestDto)
                     );
             if (decryptServiceResult.IsFailed)
                 return await _dataResponseFactory.ErrorAsync<AesResponseDto>(decryptServiceResult.Errors[0].Message, Convert.ToInt32(decryptServiceResult.Errors[0].Metadata[ConstantValue.StatusCode]), null!);

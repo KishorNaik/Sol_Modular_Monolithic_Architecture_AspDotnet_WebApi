@@ -28,5 +28,7 @@ public class UserLoginResponseDto
     public UserCommunicationDto? Communication { get; set; }
 
     public UseJwtTokenDto? JwtToken { get; set; }
+
+    public UserCredentialDto? Secrets { get; set; }
 }
 #endregion 
