@@ -13,11 +13,7 @@ public class UserLoginRequestDto
 #endregion
 
 #region Response Dto
-public class UseJwtTokenDto
-{
-    public string? Token { get; set; }
-    public string? RefreshToken { get; set; }
-}
+
 
 public class UserLoginResponseDto
 {

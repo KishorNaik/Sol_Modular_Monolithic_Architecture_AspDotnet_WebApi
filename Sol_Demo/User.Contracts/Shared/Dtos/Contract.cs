@@ -40,3 +40,10 @@ public class UserCredentialDto
 
     public string? AesSecretId { get; set; }
 }
+
+
+public class UseJwtTokenDto
+{
+    public string? Token { get; set; }
+    public string? RefreshToken { get; set; }
+}
