@@ -424,7 +424,6 @@ public class RefreshTokenUpdatedDomainEventHandler : INotificationHandler<Refres
 }
 #endregion 
 
-
 #region Response Service
 public class RefreshTokenResponseServiceParameters
 {
@@ -489,6 +488,7 @@ public sealed class RefreshTokenResponseService : IRefreshTokenResponseService
 }
 
 #endregion 
+
 #region Command Handler Service
 public class RefreshTokenCommand: IRequest<DataResponse<AesResponseDto>>
 {
